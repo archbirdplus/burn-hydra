@@ -39,8 +39,8 @@ uint64_t nearest2pow(uint64_t x) {
     return v;
 }
 
-void segment_burn(void* data, max_iterations) {
-    uint64_t e = nearest2pow(max_iterations); // log iterations
+void segment_burn(void* data, int max_iterations) {
+    uint64_t e = nearest2pow(static_cast<uint64_t>(max_iterations)); // log iterations
     uint64_t l = self.start_size; // log size
     // iterations can't exceed size because that causes problems
     // either in validity or in the memory architecture
@@ -53,10 +53,11 @@ void segment_burn(void* data, max_iterations) {
     vars_t* vars = data->vars;
     segment_t* segment = data->segment;
     mpz_t update = vars->update;
-    mpz_t result = select_burn(self, x, e, l);
+    mpz_t result = recursive_burn(self, x, e, 1);
     mpz_fdiv_q_2exp(vars->update, result, l); // just the physical overflow
     mpz_fdiv_r_2exp(result, result, l);
     sendLeft(segment, update); // lower node sends first? (to cleanup memory for lower levels)
+    // just... ignore and assert zeroes on the left edge
     receiveLeft(segment, update);
     // compensate for partial right shift
     // assume that the left node had the same iterations demanded
@@ -65,19 +66,49 @@ void segment_burn(void* data, max_iterations) {
     result += update
 }
 
-// Selects the appropriate implementing method,
-// which themselves handle messages to lower nodes.
-void select_burn(data_t* data, mpz_t x, uint64_t e, uint64_t l) {
-    if e > self.end_size {
-        // turn one big-step into smaller messages
-        // handles everything down to the basecase (end_size=0)
-        burn_funnel(data, x, e, l);
-        return;
+// Funnel until next block, denoted by index i
+// Updates x, representing the entire right side of the integer.
+void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
+    const uint64_t end_size = data->vars->block_size[i];
+    assert e >= end_size;
+    vector<mpz_t> p3 = data->vars->p3;
+    if (e == end_size) {
+        // end of funnel, go to next mem block
+        // it will return the integer to pass back up
+        // TODO: this bit of the integer hasn't been updated yet,
+        // and the recursive burn still has to return its carry
+        // calling convention may differ
+        // x *= p3t
+        // return top(x) + recv_carry(tail(x))
+        mpz_mul(x, x, p3[e]);
+        mpz_t tmp2; mpz_init(tmp2);
+        mpz_fdiv_r_2exp(tmp2, x, 1<<e);
+        mpz_fdiv_q_2exp(x, x, 1<<e);
+        mpz_t res;
+        res = recursive_burn(data, tmp2, e, i);
+        mpz_clear(tmp2);
+        // TODO: this res is allocated in rec-burn
+        // ideally neither would allocate or deallocate
+        mpz_clear(res);
+        mpz_add(x, x, res);
+        return x;
     }
-    if e == self.end_size {
-        // a single big-step operation
-        burn_chain(data, x, e, l);
-        return;
+    // e > end_size
+    // TODO: preallocate this
+    mpz_t next; mpz_init(next);
+    // high, one low per stack
+    // high is n/2, low is actually n*1.6
+    uint64_t t = 1<<(e-1)
+    mpz_set(low, x);
+    for (int j = 0; j < 2; j++) {
+        mpz_fdiv_r_2exp(next, x, t);
+        mpz_fdiv_q_2exp(x, x, t);
+        // most of the size thus remains in x
+        // I guess they are both in cache though
+        funnel_until(data, next, e-1, i);
+        // x re-inflates after the longer process
+        mpz_mul(x, x, p3[t]);
+        mpz_add(x, x, next);
     }
 }
 
@@ -90,67 +121,46 @@ void select_burn(data_t* data, mpz_t x, uint64_t e, uint64_t l) {
 //  2) non-monotinic non-decreasing sizes, adjusting steps as needed (not necssarily coalescing optimally)
 //  3) zero blocks, simply passing data through
 // TODO: currently data is not properly separated? all comes from x
-void recursive_burn(data_t* data, mpz_t x, uint64_t e, uint64_t i) {
+// Calling convention: x is passed undercarry, then the carry is returned
+// Note that carry must be added after the current block is updated.
+// 1) Accept undercarry parameter
+// 2) Perform own computation
+// 3) Add undercarry
+// 4) Compute and return overcarry
+// ... could we rearrange it to add first while cache is hot?
+mpz_t recursive_burn(data_t* data, mpz_t add, uint64_t e, int i) {
     segment_t* segment = data->segment;
-    vector<uint64_t> tmp = data->vars->block_size
     vector<uint64_t> blocks = data->vars->block_size
-    uint64_t input = blocks[i];
-    uint64_t output = blocks[i+1];
+    uint64_t l = blocks[i]; // log size of input/self
+    mpz_t stored = data->vars->stored[i];
+    mpz_t tmp = data->vars->tmp[i];
+    vector<mpz_t> p3 = data->vars->p3;
     if (i == blocks.length - 1) {
         // Therefore we have the right size to pass to the next node.
-        if (segment->final) {
+        uint64_t t = 1<<e;
+        mpz_mul(stored, stored, p3[e]);
+        mpz_fdiv_r_2exp(tmp, stored, t);
+        // TODO: store this
+        mpz_t ret;
+        if (segment->is_final) {
             // Time to iterate basecase.
-            basecase_burn(x, e);
+            ret = basecase_burn(tmp, e);
         } else {
             // Otherwise continue passing data forth.
-            receiveRight(segment, tmp[i]);
-            sendRight(segment, x);
-            mpz_swap(x, tmp[i]);
-            return x;
+            mpz_init(ret);
+            // TODO: ideally recv/send the buffer than afterwards format it...
+            // check perf though
+            receiveRight(segment, ret);
+            sendRight(segment, tmp);
         }
+        mpz_add(stored, stored, ret);
+    } else {
+        funnel_until(data, stored, e, i+1);
     }
-    int repetitions = 1<<(input-output);
-    // how about only handle 1, 2 repetitions for now
-    assert repetitions < 3
-    if (repetitions == 1) {
-        // TODO: check e
-        mpz_mul(x, x, p3t[e]);
-        uint64_t t = 1<<e;
-        mpz_fdiv_q_2exp(z, x, t);
-        mpz_fdiv_r_2exp(x, x, t);
-        mpz_fdiv_q_2exp(w, x, t);
-        mpz_fdiv_r_2exp(x, x, t);
-        // this will probably simply pass the message along
-        mpz_t wp = recursive_burn(z, e, i+1);
-        // could return wp via z?
-        mpz_add(x, x, wp); // eh, just leave the extra bit or two in there
-        // TODO: store x
-        // TODO: single "global" temporary variable?
-        return w;
-    } else if (repetitions == 2) {
-        uint64_t t = 1<<(e-1);
-        mpz_t tmp = vars->tmp[i];
-        mpz_set(tmp, x);
-        mpz_t high = vars->tmp[another];
-        for (int i = 0; i < 2; i++) {
-            mpz_fdiv_q_2exp(high, tmp, t);
-            mpz_fdiv_r_2exp(tmp, tmp, t);
-            mpz_mul(high, high, p3t[e-1]);
-            // is "memory blocks" actually needed for this?
-            // it's in the form of preallocated "stack" variables?
-            // TODO: also consider the calling convention, maybe save a dup
-            // tmp is not needed again here
-            mpz_t res = recursive_burn(tmp, e-1, i+1);
-            mpz_add(high, high, res);
-            mpz_swap(high, tmp);
-        }
-        mpz_fdiv_q_2exp(tmp, tmp, 1<<(l-1));
-        // TODO: store the rest...
-        // can this storage be used over the temporary? or something
-        // TODO: add stored to x input
-        mpz_set(vars->store[i], tmp);
-        return tmp;
-    }
+    mpz_add(stored, stored, add);
+    mpz_fdiv_q_2exp(tmp, stored, 1<<l);
+    mpz_fdiv_r_2exp(stored, stored, 1<<l);
+    return tmp;
 }
 
 // treating as message-passing and slightly inefficient but instead
@@ -159,7 +169,7 @@ void recursive_burn(data_t* data, mpz_t x, uint64_t e, uint64_t i) {
 // max shift to be the lower node's message size, rather than the sum
 // This probably makes more sense with more nodes but...
 // it performs 3/4 of the multiplication work for 1/2 of the results
-// In general a shift of k on n gives k bits for k+n: k/(k+n)
+// In general a shift of k on n gives k bits for k+n: k/(k+n) relative work
 // But 1.6k+n memory, and k/n communications per node
 // _everything_ can be time-efficient, since it's just the funnel:
 // 1) internally compute with full integer
@@ -173,7 +183,7 @@ void recursive_burn(data_t* data, mpz_t x, uint64_t e, uint64_t i) {
 // tmp = x
 // for i in {0,1}
     // high = tmp >> t
-    // low = tmp % t
+    // low = tmp % 2^t
     // tmp = (3^t)*high + burn_funnel(low, e)
 
 void burn_funnel(data_t* data, mpz_t x, uint64_t e, uint64_t l) {
@@ -183,7 +193,7 @@ void burn_funnel(data_t* data, mpz_t x, uint64_t e, uint64_t l) {
     // low = x
     // for i in {0,1}
         // high = low >> t
-        // low %= t
+        // low %= 2^t
         // low = (3^t)*high + burn_funnel(low, e-1)
     // return tmp
 }
