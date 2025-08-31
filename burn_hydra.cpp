@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     };
 
     config_t config = {
-        .block_sizes = {
+        .block_params= {
             ((uint64_t)1 << 9),
             ((uint64_t)1 << 36),
             ((uint64_t)1 << 36),
@@ -36,10 +36,11 @@ int main(int argc, char** argv) {
         .prune_bits = false,
     };
 
-    uint64_t input_size = config.block_sizes[world_rank];
-    uint64_t output_size = config.block_sizes[std::clamp(world_rank-1, 0, 2)];
+    // uint64_t input_size = config.block_sizes[world_rank];
+    // uint64_t output_size = config.block_sizes[std::clamp(world_rank-1, 0, 2)];
 
-    data = segment_init(&problem, &config, &segment);
+    void* data = segment_init(&problem, &config, &segment);
+    int iterations = 1024;
     while (iterations > 0) {
         int performed = segment_burn(data, iterations);
         iterations -= performed;

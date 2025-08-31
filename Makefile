@@ -1,6 +1,6 @@
 
-SOURCES=burn_hydra.cpp basecase.cpp funnel.cpp chain.cpp
-HEADERS=common.h basecase.h funnel.h chain.h
+SOURCES=burn_hydra.cpp segment_burn.cpp communicate.cpp
+HEADERS=common.h segment_burn.h communicate.h
 
 MPICC?=mpic++
 CFLAGS+=-std=c++17

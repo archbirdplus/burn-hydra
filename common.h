@@ -6,7 +6,7 @@
 // #include <gmp.h>
 // #include <stdio.h>
 // #include <algorithm>
-// #include <cstdint>
+#include <cstdint>
 
 typedef struct problem {
     uint64_t initial;
@@ -14,13 +14,15 @@ typedef struct problem {
 } problem_t;
 
 typedef struct config {
-    uint64_t block_sizes[3];
+    uint64_t block_params[3];
     bool prune_bits;
 } config_t;
 
 typedef struct segment {
     int world_size;
     int world_rank;
+    int is_base_segment;
+    int is_top_segment;
 } segment_t;
 
 #endif // COMMON_H

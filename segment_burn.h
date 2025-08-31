@@ -4,8 +4,8 @@
 
 #include "common.h"
 
-void segment_init(problem_t*, config_t*, segment_t*);
-void segment_burn(void*, int);
+void* segment_init(problem_t*, config_t*, segment_t*);
+int segment_burn(void*, int);
 
 #endif // SEGMENT_BURN_H
 
