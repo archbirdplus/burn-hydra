@@ -3,7 +3,7 @@ SOURCES=burn_hydra.cpp segment_burn.cpp communicate.cpp
 HEADERS=common.h segment_burn.h communicate.h
 
 MPICC?=mpic++
-CFLAGS+=-std=c++17
+CFLAGS+=-std=c++17 -lgmp -lgmpxx -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib
 
 burn_hydra: ${SOURCES} ${HEADERS} out
 	${MPICC} ${CFLAGS} -o out/burn_hydra ${SOURCES}
