@@ -46,6 +46,7 @@ void setup_vars(data_t* data) {
         vars->tmp.push_back(mpz_class(0));
         vars->stored.push_back(mpz_class(0));
     }
+    mpz_set_ui(vars->stored[vars->stored.size()-1].get_mpz_t(), data->problem->initial);
     mpz_clear(r);
 }
 
