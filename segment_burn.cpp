@@ -4,22 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+#include "segment.h"
 #include "communicate.h"
-
-typedef struct vars {
-    mpz_class update;
-    std::vector<mpz_class> p3;
-    std::vector<mpz_class> tmp;
-    std::vector<mpz_class> stored;
-    std::vector<uint64_t> block_size; // from left to right, including input (stored) and output (not stored) sizes
-} vars_t;
-
-typedef struct data {
-    problem_t* problem;
-    config_t* config;
-    segment_t* segment;
-    vars_t* vars;
-} data_t;
 
 void setup_vars(data_t* data) {
     segment_t* seg = data->segment;
@@ -43,14 +29,20 @@ void setup_vars(data_t* data) {
         mpz_t next; mpz_init_set(next, r); // 3^(2^0) = 3^1 = 3 as the first
         vars->p3.push_back(mpz_class(r));
         mpz_mul(r, r, r); // could be skipped at end
+    }
+    const int s = vars->block_size.size();
+    for (int i = 0; i < s; i++) {
         vars->tmp.push_back(mpz_class(0));
         vars->stored.push_back(mpz_class(0));
     }
-    mpz_set_ui(vars->stored[vars->stored.size()-1].get_mpz_t(), data->problem->initial);
+
+    if (seg->is_base_segment) {
+        mpz_set_ui(vars->stored[vars->stored.size()-1].get_mpz_t(), data->problem->initial);
+    }
     mpz_clear(r);
 }
 
-void* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
+data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
     data_t* data = (data_t*)malloc(sizeof(data_t));
     vars_t* vars = (vars_t*)malloc(sizeof(vars_t));
     *data = {
@@ -84,8 +76,7 @@ void funnel_until(data_t*, mpz_t, uint64_t, int);
 void basecase_burn(data_t*, mpz_t, mpz_t, uint64_t, int);
 
 // Returns number of iterations actually completed.
-int segment_burn(void* v, int max_iterations) {
-    data_t* data = (data_t*)v;
+int segment_burn(data_t* data, int max_iterations) {
     uint64_t e = nearest2pow(static_cast<uint64_t>(max_iterations)); // log iterations
     uint64_t l = data->vars->block_size[0]; // log size
     // iterations can't exceed size because that causes problems
@@ -105,22 +96,22 @@ int segment_burn(void* v, int max_iterations) {
     // Currently, just a crude approximation so that we use finite space.
     bool dont_communicate_left = segment->is_top_segment;
 
-    mpz_class update = vars->update;
+    mpz_class *update = &vars->update;
     mpz_t output; mpz_init(output);
     // TODO: again, rop and add parameters could be merged
-    recursive_burn(data, output, update.get_mpz_t(), e, 0);
+    recursive_burn(data, output, update->get_mpz_t(), e, 0);
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
         sendLeft(segment, output);
     } else {
         assert(mpz_sgn(output) == 0);
-        mpz_set(update.get_mpz_t(), output);
+        mpz_set(update->get_mpz_t(), output);
     }
     mpz_clear(output); // TODO: again, remove alloc
 
     if (!dont_communicate_left) {
-        receiveLeft(segment, update.get_mpz_t());
+        receiveLeft(segment, update->get_mpz_t());
     }
 
     // compensating for small shifts is not necessary as long
@@ -200,55 +191,61 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     segment_t* segment = data->segment;
     std::vector<uint64_t> blocks = data->vars->block_size;
     uint64_t l = blocks[i]; // log size of input/self
-    mpz_class stored = data->vars->stored[i];
-    mpz_class tmp = data->vars->tmp[i];
+    mpz_class *stored = &data->vars->stored[i];
+    mpz_class *tmp = &data->vars->tmp[i];
     std::vector<mpz_class> p3 = data->vars->p3;
     // TODO: blocks_count
     // TODO: does the last "block" need to update? is it not an update itself?
     if (i == blocks.size() - 1) {
         // Therefore we have the right size to pass to the next node.
         uint64_t t = 1<<e;
-        // mpz_mul(stored.get_mpz_t(), stored.get_mpz_t(), p3[e].get_mpz_t());
-        stored = stored * p3[e];
-        mpz_fdiv_r_2exp(tmp.get_mpz_t(), stored.get_mpz_t(), t);
+        mpz_mul(stored->get_mpz_t(), stored->get_mpz_t(), p3[e].get_mpz_t());
+        // stored = stored * p3[e];
+        mpz_fdiv_r_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), t);
         // TODO: store this
         mpz_t ret; mpz_init(ret);
         if (segment->is_base_segment) {
             // Time to iterate basecase.
-            basecase_burn(data, ret, tmp.get_mpz_t(), e, i+1);
+            basecase_burn(data, ret, tmp->get_mpz_t(), e, i);
         } else {
             // Otherwise continue passing data forth.
             mpz_init(ret);
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
             receiveRight(segment, ret);
-            sendRight(segment, tmp.get_mpz_t());
+            sendRight(segment, tmp->get_mpz_t());
         }
-        mpz_add(stored.get_mpz_t(), stored.get_mpz_t(), ret);
+        mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), ret);
     } else {
-        funnel_until(data, stored.get_mpz_t(), e, i+1);
+        funnel_until(data, stored->get_mpz_t(), e, i+1);
     }
-    mpz_add(stored.get_mpz_t(), stored.get_mpz_t(), add);
-    mpz_fdiv_q_2exp(tmp.get_mpz_t(), stored.get_mpz_t(), 1<<l);
-    mpz_fdiv_r_2exp(stored.get_mpz_t(), stored.get_mpz_t(), 1<<l);
+    mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), add);
+    mpz_fdiv_q_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), 1<<l);
+    mpz_fdiv_r_2exp(stored->get_mpz_t(), stored->get_mpz_t(), 1<<l);
     // mpz_set(rop, tmp);
-    mpz_set(rop, tmp.get_mpz_t()); // TODO: ???
+    mpz_set(rop, tmp->get_mpz_t()); // TODO: ???
 }
 
 void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
-    mpz_class stored = data->vars->stored[i];
-    mpz_class tmp = data->vars->tmp[i];
+    // It seems like the vector contains the mpz structs themselves.
+    // Thus dereferencing it takes a copy of size and limb pointer,
+    // which promptly get overridden when an operation is made, and the
+    // old struct is in invalid memory or something.
+    mpz_class *stored = &data->vars->stored[i];
+    mpz_class *tmp = &data->vars->tmp[i];
     uint64_t l = data->vars->block_size[i];
-    mpz_add(stored.get_mpz_t(), stored.get_mpz_t(), add);
+    mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), add);
     uint64_t t = 1<<e;
 
     for (uint64_t i = 0; i < t; i++) {
-        mpz_fdiv_q_2exp(tmp.get_mpz_t(), stored.get_mpz_t(), 1);
-        mpz_add(stored.get_mpz_t(), stored.get_mpz_t(), tmp.get_mpz_t());
+        mpz_fdiv_q_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), 1);
+        mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), tmp->get_mpz_t());
+        gmp_printf("i: %d, stored: %Zd\n", i, stored->get_mpz_t());
     }
 
-    mpz_fdiv_q_2exp(rop, stored.get_mpz_t(), 1<<l);
-    mpz_fdiv_r_2exp(stored.get_mpz_t(), stored.get_mpz_t(), 1<<l);
+    mpz_fdiv_q_2exp(rop, stored->get_mpz_t(), 1<<l);
+    mpz_fdiv_r_2exp(stored->get_mpz_t(), stored->get_mpz_t(), 1<<l);
+    print_segment_blocks(data);
 }
 
 // treating as message-passing and slightly inefficient but instead

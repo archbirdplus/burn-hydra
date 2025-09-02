@@ -1,6 +1,6 @@
 
-SOURCES=burn_hydra.cpp segment_burn.cpp communicate.cpp
-HEADERS=common.h segment_burn.h communicate.h
+SOURCES=burn_hydra.cpp segment_burn.cpp segment_results.cpp communicate.cpp
+HEADERS=common.h segment.h communicate.h
 
 MPICC?=mpic++
 CFLAGS+=-std=c++17 -lgmp -lgmpxx -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib
