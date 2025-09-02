@@ -1,6 +1,6 @@
 
 #include <mpi.h>
-#include <stdio.h>
+#include <iostream>
 #include <algorithm>
 #include <cstdint>
 
@@ -22,9 +22,10 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
+    int64_t iterations = 1<<20;
     problem_t problem = {
         .initial = 3,
-        .iterations = 1 << 30
+        .iterations = iterations,
     };
 
     config_t config = {
@@ -40,11 +41,11 @@ int main(int argc, char** argv) {
     // uint64_t output_size = config.block_sizes[std::clamp(world_rank-1, 0, 2)];
 
     void* data = segment_init(&problem, &config, &segment);
-    int iterations = 1024;
     while (iterations > 0) {
         int performed = segment_burn(data, iterations);
         iterations -= performed;
         // TODO: occasionally checkpoint
+        std::cout << "iterations left: " << iterations << std::endl;
     }
 
     MPI_Finalize();

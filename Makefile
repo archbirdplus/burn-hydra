@@ -6,7 +6,7 @@ MPICC?=mpic++
 CFLAGS+=-std=c++17 -lgmp -lgmpxx -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib
 
 burn_hydra: ${SOURCES} ${HEADERS} out
-	${MPICC} ${CFLAGS} -o out/burn_hydra ${SOURCES}
+	${MPICC} ${CFLAGS} -g -o out/burn_hydra ${SOURCES}
 
 out:
 	mkdir out

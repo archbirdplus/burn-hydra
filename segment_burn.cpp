@@ -7,7 +7,7 @@
 #include "communicate.h"
 
 typedef struct vars {
-    mpz_t update;
+    mpz_class update;
     std::vector<mpz_class> p3;
     std::vector<mpz_class> tmp;
     std::vector<mpz_class> stored;
@@ -22,20 +22,41 @@ typedef struct data {
 } data_t;
 
 void setup_vars(data_t* data) {
-    mpz_init(data->vars->update); // TODO: coalesce this into another tmp
-    data->vars->p3 = {}; // TODO: actually calculate them, n times
-    data->vars->tmp = {}; // TODO: mpz_init n times
-    data->vars->stored = {}; // TODO: mpz_init n times
-    data->vars->block_size = {}; // TODO: actually calculate them, nontrivial
+    segment_t* seg = data->segment;
+    seg->is_base_segment = seg->world_rank == 0;
+    seg->is_top_segment = seg->world_rank == seg->world_size-1;
+
+    vars_t* vars = data->vars;
+    vars->update = mpz_class(0); // TODO: coalesce this into another tmp
+    vars->p3 = {};
+    vars->tmp = {};
+    vars->stored = {};
+    if (seg->is_base_segment) {
+        vars->block_size = {10,8};
+    } else {
+        vars->block_size = {10}; // TODO: optimize
+    }
+
+    uint64_t max_size = vars->block_size[0];
+    mpz_t r; mpz_init_set_ui(r, 3);
+    for (uint64_t i = 1; i <= max_size; i++) {
+        mpz_t next; mpz_init_set(next, r); // 3^(2^0) = 3^1 = 3 as the first
+        vars->p3.push_back(mpz_class(r));
+        mpz_mul(r, r, r); // could be skipped at end
+        vars->tmp.push_back(mpz_class(0));
+        vars->stored.push_back(mpz_class(0));
+    }
+    mpz_clear(r);
 }
 
 void* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
     data_t* data = (data_t*)malloc(sizeof(data_t));
+    vars_t* vars = (vars_t*)malloc(sizeof(vars_t));
     *data = {
         .problem = problem,
         .config = config,
         .segment = segment,
-        .vars = nullptr,
+        .vars = vars,
     };
     setup_vars(data);
     return data;
@@ -74,21 +95,32 @@ int segment_burn(void* v, int max_iterations) {
         // An interesting situtation, we might accidentally hit the basecase.
         // But that is not necessarily invalidating.
     }
-
-    // This is slightly rearranged but the calculations still happen
-    // after a send+receive pair. Initialization may be a bit silly though.
     segment_t* segment = data->segment;
-    mpz_t input; // alloc first?
-    mpz_init(input);
-    receiveLeft(segment, input);
-    mpz_clear(input); // TODO: again, remove alloc from rec-burn
+    vars_t* vars = data->vars;
+
+    // TODO: this is also part of the left-truncation condition.
+    // When the result leaves the segment's light cone, it should
+    // be able to simply disappear.
+    // Currently, just a crude approximation so that we use finite space.
+    bool dont_communicate_left = segment->is_top_segment;
+
+    mpz_class update = vars->update;
     mpz_t output; mpz_init(output);
-    recursive_burn(data, output, input, e, 0);
-    // lower node sends first? (to cleanup memory for lower levels (!?))
-    // just... ignore left edge and assert zeroes
-    sendLeft(segment, output);
-    mpz_clear(output); // TODO: again, remove alloc from rec-burn
-    // TODO: this current order will instantly deadlock
+    // TODO: again, rop and add parameters could be merged
+    recursive_burn(data, output, update.get_mpz_t(), e, 0);
+
+    // lower node sends first (to cleanup memory for lower levels (!?))
+    if (!dont_communicate_left) {
+        sendLeft(segment, output);
+    } else {
+        assert(mpz_sgn(output) == 0);
+        mpz_set(update.get_mpz_t(), output);
+    }
+    mpz_clear(output); // TODO: again, remove alloc
+
+    if (!dont_communicate_left) {
+        receiveLeft(segment, update.get_mpz_t());
+    }
 
     // compensating for small shifts is not necessary as long
     // as they remain in sync
@@ -119,28 +151,32 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
         mpz_t res; mpz_init(res);
         recursive_burn(data, res, tmp2, e, i);
         mpz_clear(tmp2);
-        // TODO: this res is allocated in rec-burn
-        // ideally neither would allocate or deallocate
+        // TODO: ideally no allocate or deallocate of mpz_t
+        // Technically, we could pass the same mpz into both...
+        // they're never needed at the same time
         mpz_clear(res);
         mpz_add(x, x, res);
+    } else {
+        // e > end_size
+        // TODO: preallocate this
+        mpz_t next; mpz_init(next);
+        // high, one low per stack
+        // high is n/2, low is actually n*1.6
+        uint64_t t = 1<<(e-1);
+        mpz_set(next, x);
+        for (int j = 0; j < 2; j++) {
+            mpz_fdiv_r_2exp(next, x, t);
+            mpz_fdiv_q_2exp(x, x, t);
+            // most of the size thus remains in x
+            // I guess they are both in cache though
+            funnel_until(data, next, e-1, i);
+            // x re-inflates after the longer process
+            mpz_mul(x, x, p3[t].get_mpz_t());
+            mpz_add(x, x, next);
+        }
+        mpz_clear(next);
     }
-    // e > end_size
-    // TODO: preallocate this
-    mpz_t next; mpz_init(next);
-    // high, one low per stack
-    // high is n/2, low is actually n*1.6
-    uint64_t t = 1<<(e-1);
-    mpz_set(next, x);
-    for (int j = 0; j < 2; j++) {
-        mpz_fdiv_r_2exp(next, x, t);
-        mpz_fdiv_q_2exp(x, x, t);
-        // most of the size thus remains in x
-        // I guess they are both in cache though
-        funnel_until(data, next, e-1, i);
-        // x re-inflates after the longer process
-        mpz_mul(x, x, p3[t].get_mpz_t());
-        mpz_add(x, x, next);
-    }
+    // Return is handled by updating x.
 }
 
 // Recursive burn moves depth-first from left to right,
@@ -195,7 +231,7 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     mpz_fdiv_q_2exp(tmp.get_mpz_t(), stored.get_mpz_t(), 1<<l);
     mpz_fdiv_r_2exp(stored.get_mpz_t(), stored.get_mpz_t(), 1<<l);
     // mpz_set(rop, tmp);
-    rop = tmp.get_mpz_t(); // TODO: ???
+    mpz_set(rop, tmp.get_mpz_t()); // TODO: ???
 }
 
 void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {

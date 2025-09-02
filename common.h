@@ -21,8 +21,8 @@ typedef struct config {
 typedef struct segment {
     int world_size;
     int world_rank;
-    int is_base_segment;
-    int is_top_segment;
+    bool is_base_segment;
+    bool is_top_segment;
 } segment_t;
 
 #endif // COMMON_H
