@@ -18,9 +18,9 @@ void setup_vars(data_t* data) {
     vars->tmp = {};
     vars->stored = {};
     if (seg->is_base_segment) {
-        vars->block_size = {10,8};
+        vars->block_size = {3,2};
     } else {
-        vars->block_size = {10}; // TODO: optimize
+        vars->block_size = {3}; // TODO: optimize
     }
 
     uint64_t max_size = vars->block_size[0];
@@ -39,6 +39,9 @@ void setup_vars(data_t* data) {
     if (seg->is_base_segment) {
         mpz_set_ui(vars->stored[vars->stored.size()-1].get_mpz_t(), data->problem->initial);
     }
+    mpz_class *stored = &vars->stored[vars->stored.size()-1];
+    gmp_printf("rank %d init to %Zd\n", data->segment->world_rank, vars->stored[vars->stored.size()-1].get_mpz_t());
+    gmp_printf("rank %d aka init to %Zd\n", data->segment->world_rank, stored->get_mpz_t());
     mpz_clear(r);
 }
 
@@ -105,7 +108,7 @@ int segment_burn(data_t* data, int max_iterations) {
     if (!dont_communicate_left) {
         sendLeft(segment, output);
     } else {
-        assert(mpz_sgn(output) == 0);
+        // assert(mpz_sgn(output) == 0);
         mpz_set(update->get_mpz_t(), output);
     }
     mpz_clear(output); // TODO: again, remove alloc
@@ -199,17 +202,17 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     if (i == blocks.size() - 1) {
         // Therefore we have the right size to pass to the next node.
         uint64_t t = 1<<e;
-        mpz_mul(stored->get_mpz_t(), stored->get_mpz_t(), p3[e].get_mpz_t());
-        // stored = stored * p3[e];
-        mpz_fdiv_r_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), t);
         // TODO: store this
         mpz_t ret; mpz_init(ret);
         if (segment->is_base_segment) {
             // Time to iterate basecase.
+            // TODO: addition could be extracted out;
+            // but better would be to rearrange to have addition first (?)
             basecase_burn(data, ret, tmp->get_mpz_t(), e, i);
         } else {
+            mpz_mul(stored->get_mpz_t(), stored->get_mpz_t(), p3[e].get_mpz_t());
+            mpz_fdiv_r_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), t);
             // Otherwise continue passing data forth.
-            mpz_init(ret);
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
             receiveRight(segment, ret);
@@ -238,9 +241,12 @@ void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     uint64_t t = 1<<e;
 
     for (uint64_t i = 0; i < t; i++) {
+        gmp_printf(" :loop stored: %Zd\n", stored->get_mpz_t());
         mpz_fdiv_q_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), 1);
+        gmp_printf(" :tmp halved: %Zd\n", tmp->get_mpz_t());
         mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), tmp->get_mpz_t());
-        gmp_printf("i: %d, stored: %Zd\n", i, stored->get_mpz_t());
+        gmp_printf(" :added back: %Zd\n", stored->get_mpz_t());
+        gmp_printf(" :iter %d completed\n", i);
     }
 
     mpz_fdiv_q_2exp(rop, stored->get_mpz_t(), 1<<l);
