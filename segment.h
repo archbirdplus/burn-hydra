@@ -8,10 +8,10 @@
 #include "common.h"
 
 typedef struct vars {
-    mpz_class update;
-    std::vector<mpz_class> p3;
-    std::vector<mpz_class> tmp;
-    std::vector<mpz_class> stored;
+    mpz_ptr update;
+    std::vector<mpz_ptr> p3;
+    std::vector<mpz_ptr> tmp;
+    std::vector<mpz_ptr> stored;
     std::vector<uint64_t> block_size; // from left to right, including input (stored) and output (not stored) sizes
 } vars_t;
 

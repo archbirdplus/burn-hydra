@@ -13,7 +13,7 @@ void setup_vars(data_t* data) {
     seg->is_top_segment = seg->world_rank == seg->world_size-1;
 
     vars_t* vars = data->vars;
-    vars->update = mpz_class(0); // TODO: coalesce this into another tmp
+    vars->update = (mpz_ptr) malloc (sizeof(mpz_t)); // TODO: coalesce this into another tmp
     vars->p3 = {};
     vars->tmp = {};
     vars->stored = {};
@@ -25,23 +25,29 @@ void setup_vars(data_t* data) {
 
     uint64_t max_size = vars->block_size[0];
     mpz_t r; mpz_init_set_ui(r, 3);
-    for (uint64_t i = 1; i <= max_size; i++) {
-        mpz_t next; mpz_init_set(next, r); // 3^(2^0) = 3^1 = 3 as the first
-        vars->p3.push_back(mpz_class(r));
+    for (uint64_t i = 0; i <= max_size; i++) {
+        // 3^(2^0) = 3^1 = 3 is the first element of p3
+        mpz_ptr next = (mpz_ptr) malloc (sizeof(mpz_t));
+        mpz_init_set(next, r);
+        vars->p3.push_back(next);
         mpz_mul(r, r, r); // could be skipped at end
     }
     const int s = vars->block_size.size();
     for (int i = 0; i < s; i++) {
-        vars->tmp.push_back(mpz_class(0));
-        vars->stored.push_back(mpz_class(0));
+        mpz_ptr a = (mpz_ptr) malloc (sizeof(mpz_t));
+        mpz_init(a);
+        vars->tmp.push_back(a);
+        mpz_ptr b = (mpz_ptr) malloc (sizeof(mpz_t));
+        mpz_init(b);
+        vars->stored.push_back(b);
     }
 
     if (seg->is_base_segment) {
-        mpz_set_ui(vars->stored[vars->stored.size()-1].get_mpz_t(), data->problem->initial);
+        mpz_set_ui(vars->stored[vars->stored.size()-1], data->problem->initial);
     }
-    mpz_class *stored = &vars->stored[vars->stored.size()-1];
-    gmp_printf("rank %d init to %Zd\n", data->segment->world_rank, vars->stored[vars->stored.size()-1].get_mpz_t());
-    gmp_printf("rank %d aka init to %Zd\n", data->segment->world_rank, stored->get_mpz_t());
+    mpz_ptr stored = vars->stored[vars->stored.size()-1];
+    gmp_printf("rank %d init to %Zd\n", data->segment->world_rank, vars->stored[vars->stored.size()-1]);
+    gmp_printf("rank %d aka init to %Zd\n", data->segment->world_rank, stored);
     mpz_clear(r);
 }
 
@@ -99,22 +105,22 @@ int segment_burn(data_t* data, int max_iterations) {
     // Currently, just a crude approximation so that we use finite space.
     bool dont_communicate_left = segment->is_top_segment;
 
-    mpz_class *update = &vars->update;
+    mpz_ptr update = vars->update;
     mpz_t output; mpz_init(output);
     // TODO: again, rop and add parameters could be merged
-    recursive_burn(data, output, update->get_mpz_t(), e, 0);
+    recursive_burn(data, output, update, e, 0);
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
         sendLeft(segment, output);
     } else {
         // assert(mpz_sgn(output) == 0);
-        mpz_set(update->get_mpz_t(), output);
+        mpz_set(update, output);
     }
     mpz_clear(output); // TODO: again, remove alloc
 
     if (!dont_communicate_left) {
-        receiveLeft(segment, update->get_mpz_t());
+        receiveLeft(segment, update);
     }
 
     // compensating for small shifts is not necessary as long
@@ -130,7 +136,7 @@ int segment_burn(data_t* data, int max_iterations) {
 void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
     const uint64_t end_size = data->vars->block_size[i];
     assert(e >= end_size);
-    std::vector<mpz_class> p3 = data->vars->p3;
+    std::vector<mpz_ptr> p3 = data->vars->p3;
     if (e == end_size) {
         // end of funnel, go to next mem block
         // it will return the integer to pass back up
@@ -139,7 +145,7 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
         // calling convention may differ
         // x *= p3t
         // return top(x) + recv_carry(tail(x))
-        mpz_mul(x, x, p3[e].get_mpz_t());
+        mpz_mul(x, x, p3[e]);
         mpz_t tmp2; mpz_init(tmp2);
         mpz_fdiv_r_2exp(tmp2, x, 1<<e);
         mpz_fdiv_q_2exp(x, x, 1<<e);
@@ -166,7 +172,7 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
             // I guess they are both in cache though
             funnel_until(data, next, e-1, i);
             // x re-inflates after the longer process
-            mpz_mul(x, x, p3[t].get_mpz_t());
+            mpz_mul(x, x, p3[e-1]);
             mpz_add(x, x, next);
         }
         mpz_clear(next);
@@ -194,9 +200,9 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     segment_t* segment = data->segment;
     std::vector<uint64_t> blocks = data->vars->block_size;
     uint64_t l = blocks[i]; // log size of input/self
-    mpz_class *stored = &data->vars->stored[i];
-    mpz_class *tmp = &data->vars->tmp[i];
-    std::vector<mpz_class> p3 = data->vars->p3;
+    mpz_ptr stored = data->vars->stored[i];
+    mpz_ptr tmp = data->vars->tmp[i];
+    std::vector<mpz_ptr> p3 = data->vars->p3;
     // TODO: blocks_count
     // TODO: does the last "block" need to update? is it not an update itself?
     if (i == blocks.size() - 1) {
@@ -208,25 +214,25 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // Time to iterate basecase.
             // TODO: addition could be extracted out;
             // but better would be to rearrange to have addition first (?)
-            basecase_burn(data, ret, tmp->get_mpz_t(), e, i);
+            basecase_burn(data, ret, tmp, e, i);
         } else {
-            mpz_mul(stored->get_mpz_t(), stored->get_mpz_t(), p3[e].get_mpz_t());
-            mpz_fdiv_r_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), t);
+            mpz_mul(stored, stored, p3[e]);
+            mpz_fdiv_r_2exp(tmp, stored, t);
             // Otherwise continue passing data forth.
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
             receiveRight(segment, ret);
-            sendRight(segment, tmp->get_mpz_t());
+            sendRight(segment, tmp);
         }
-        mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), ret);
+        mpz_add(stored, stored, ret);
     } else {
-        funnel_until(data, stored->get_mpz_t(), e, i+1);
+        funnel_until(data, stored, e, i+1);
     }
-    mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), add);
-    mpz_fdiv_q_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), 1<<l);
-    mpz_fdiv_r_2exp(stored->get_mpz_t(), stored->get_mpz_t(), 1<<l);
+    mpz_add(stored, stored, add);
+    mpz_fdiv_q_2exp(tmp, stored, 1<<l);
+    mpz_fdiv_r_2exp(stored, stored, 1<<l);
     // mpz_set(rop, tmp);
-    mpz_set(rop, tmp->get_mpz_t()); // TODO: ???
+    mpz_set(rop, tmp); // TODO: ???
 }
 
 void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
@@ -234,23 +240,23 @@ void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     // Thus dereferencing it takes a copy of size and limb pointer,
     // which promptly get overridden when an operation is made, and the
     // old struct is in invalid memory or something.
-    mpz_class *stored = &data->vars->stored[i];
-    mpz_class *tmp = &data->vars->tmp[i];
+    mpz_ptr stored = data->vars->stored[i];
+    mpz_ptr tmp = data->vars->tmp[i];
     uint64_t l = data->vars->block_size[i];
-    mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), add);
+    mpz_add(stored, stored, add);
     uint64_t t = 1<<e;
 
     for (uint64_t i = 0; i < t; i++) {
-        gmp_printf(" :loop stored: %Zd\n", stored->get_mpz_t());
-        mpz_fdiv_q_2exp(tmp->get_mpz_t(), stored->get_mpz_t(), 1);
-        gmp_printf(" :tmp halved: %Zd\n", tmp->get_mpz_t());
-        mpz_add(stored->get_mpz_t(), stored->get_mpz_t(), tmp->get_mpz_t());
-        gmp_printf(" :added back: %Zd\n", stored->get_mpz_t());
+        gmp_printf(" :loop stored: %Zd\n", stored);
+        mpz_fdiv_q_2exp(tmp, stored, 1);
+        gmp_printf(" :tmp halved: %Zd\n", tmp);
+        mpz_add(stored, stored, tmp);
+        gmp_printf(" :added back: %Zd\n", stored);
         gmp_printf(" :iter %d completed\n", i);
     }
 
-    mpz_fdiv_q_2exp(rop, stored->get_mpz_t(), 1<<l);
-    mpz_fdiv_r_2exp(stored->get_mpz_t(), stored->get_mpz_t(), 1<<l);
+    mpz_fdiv_q_2exp(rop, stored, 1<<l);
+    mpz_fdiv_r_2exp(stored, stored, 1<<l);
     print_segment_blocks(data);
 }
 
