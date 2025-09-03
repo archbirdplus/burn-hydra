@@ -19,9 +19,9 @@ void setup_vars(data_t* data) {
     vars->tmp = {};
     vars->stored = {};
     if (seg->is_base_segment) {
-        vars->block_size = {3};
+        vars->block_size = {2};
     } else {
-        vars->block_size = {3}; // TODO: optimize
+        vars->block_size = {2}; // TODO: optimize
     }
 
     uint64_t max_size = vars->block_size[0];
@@ -128,7 +128,7 @@ int segment_burn(data_t* data, int max_iterations) {
     }
 
     // incorrect
-    mpz_add(data->vars->stored[0], data->vars->stored[0], update);
+    // mpz_add(data->vars->stored[0], data->vars->stored[0], update);
 
     // compensating for small shifts is not necessary as long
     // as they remain in sync
@@ -136,6 +136,18 @@ int segment_burn(data_t* data, int max_iterations) {
     // TODO: let funnel soak up and coalesce small shifts
 
     return 1<<e;
+}
+
+void segment_finalize(data_t* data) {
+    // If (when) the segment didn't send its update, it needs
+    // to re-inflate it and add it onto itself.
+    const uint64_t l = data->vars->block_size[0]; // log size
+    mpz_ptr update = data->vars->update;
+    mpz_ptr stored = data->vars->stored[0];
+    if (!data->segment->is_top_segment) {
+        mpz_mul_2exp(update, update, 1<<l);
+    }
+    mpz_add(stored, stored, update);
 }
 
 // Funnel until next block, denoted by index i
@@ -263,6 +275,7 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             return;
         } else {
             mpz_mul(stored, stored, p3[e]);
+            gmp_printf("%d splitting: %Zd\n", segment->world_rank, stored);
             mpz_fdiv_r_2exp(tmp, stored, t);
             mpz_fdiv_q_2exp(stored, stored, t);
             // Otherwise continue passing data forth.

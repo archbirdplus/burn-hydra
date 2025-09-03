@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t iterations = 1<<5;
+    int64_t iterations = 1<<4;
     problem_t problem = {
         .initial = 3,
         .iterations = iterations,
@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
         std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
         print_segment_blocks(data);
     }
+    segment_finalize(data);
 
     print_segment_blocks(data);
     // print_smallest_mod(data, (uint64_t)1<<32);

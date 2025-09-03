@@ -24,6 +24,7 @@ typedef struct data {
 
 data_t* segment_init(problem_t*, config_t*, segment_t*);
 int segment_burn(data_t*, int);
+void segment_finalize(data_t*);
 void print_segment_blocks(data_t*);
 void print_smallest_mod(data_t* data, uint64_t mod);
 
