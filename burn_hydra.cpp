@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t iterations = 1<<3;
+    int64_t iterations = 1<<20;
     problem_t problem = {
         .initial = 3,
         .iterations = iterations,
@@ -44,7 +44,9 @@ int main(int argc, char** argv) {
         std::cout << "iterations left: " << iterations << std::endl;
     }
 
-    print_segment_blocks(data);
+    // print_segment_blocks(data);
+    print_smallest_mod(data, (uint64_t)1<<32);
+    print_smallest_mod(data, 256);
 
     MPI_Finalize();
 }

@@ -11,7 +11,7 @@ void send(segment_t* segment, int rank, mpz_t x) {
     void* buf = malloc(count*size);
     size_t countp = 0;
     mpz_export(buf, &countp, 1, size, 0, 0, x);
-    std::cout << "expected: " << count << "; countp turns out: " << countp << std::endl;
+    // std::cout << "expected: " << count << "; countp turns out: " << countp << std::endl;
     assert(count - countp >= 0);
     assert(count - countp <= 1);
     // TODO: named tag constants

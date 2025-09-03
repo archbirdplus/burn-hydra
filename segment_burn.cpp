@@ -18,9 +18,9 @@ void setup_vars(data_t* data) {
     vars->tmp = {};
     vars->stored = {};
     if (seg->is_base_segment) {
-        vars->block_size = {3,2};
+        vars->block_size = {20, 6};
     } else {
-        vars->block_size = {3}; // TODO: optimize
+        vars->block_size = {20, 20, 20, 20, 20, 20, 20, 20}; // TODO: optimize
     }
 
     uint64_t max_size = vars->block_size[0];
@@ -112,6 +112,7 @@ int segment_burn(data_t* data, int max_iterations) {
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
+        // gmp_printf("%d sending left: %Zd\n", segment->world_rank, output);
         sendLeft(segment, output);
     } else {
         // assert(mpz_sgn(output) == 0);
@@ -121,6 +122,7 @@ int segment_burn(data_t* data, int max_iterations) {
 
     if (!dont_communicate_left) {
         receiveLeft(segment, update);
+        // gmp_printf("%d receiving left: %Zd\n", segment->world_rank, update);
     }
 
     // compensating for small shifts is not necessary as long
@@ -155,8 +157,8 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
         // TODO: ideally no allocate or deallocate of mpz_t
         // Technically, we could pass the same mpz into both...
         // they're never needed at the same time
-        mpz_clear(res);
         mpz_add(x, x, res);
+        mpz_clear(res);
     } else {
         // e > end_size
         // TODO: preallocate this
@@ -213,8 +215,15 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
         if (segment->is_base_segment) {
             // Time to iterate basecase.
             // TODO: addition could be extracted out;
-            // but better would be to rearrange to have addition first (?)
-            basecase_burn(data, ret, tmp, e, i);
+            // somehow addition is already first...
+            // This function handles everything it needs already.
+            // TODO: basecase_burn handles way too much, why, how?
+            // gmp_printf("H^%d(%Zd) + %Zd = ... \n", 1<<e, stored, add);
+            basecase_burn(data, ret, add, e, i);
+            // gmp_printf("    ... H{} = %Zd:%Zd\n", ret, stored);
+            mpz_set(rop, ret);
+            mpz_clear(ret);
+            return;
         } else {
             mpz_mul(stored, stored, p3[e]);
             mpz_fdiv_r_2exp(tmp, stored, t);
@@ -222,16 +231,18 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
             receiveRight(segment, ret);
+            // gmp_printf("%d receiving right: %Zd\n", segment->world_rank, ret);
             sendRight(segment, tmp);
+            // gmp_printf("%d sending right: %Zd\n", segment->world_rank, tmp);
+            mpz_add(stored, stored, ret);
         }
-        mpz_add(stored, stored, ret);
+        mpz_clear(ret);
     } else {
         funnel_until(data, stored, e, i+1);
     }
     mpz_add(stored, stored, add);
     mpz_fdiv_q_2exp(tmp, stored, 1<<l);
     mpz_fdiv_r_2exp(stored, stored, 1<<l);
-    // mpz_set(rop, tmp);
     mpz_set(rop, tmp); // TODO: ???
 }
 
@@ -243,21 +254,16 @@ void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     mpz_ptr stored = data->vars->stored[i];
     mpz_ptr tmp = data->vars->tmp[i];
     uint64_t l = data->vars->block_size[i];
-    mpz_add(stored, stored, add);
     uint64_t t = 1<<e;
 
     for (uint64_t i = 0; i < t; i++) {
-        gmp_printf(" :loop stored: %Zd\n", stored);
         mpz_fdiv_q_2exp(tmp, stored, 1);
-        gmp_printf(" :tmp halved: %Zd\n", tmp);
         mpz_add(stored, stored, tmp);
-        gmp_printf(" :added back: %Zd\n", stored);
-        gmp_printf(" :iter %d completed\n", i);
     }
 
+    mpz_add(stored, stored, add);
     mpz_fdiv_q_2exp(rop, stored, 1<<l);
     mpz_fdiv_r_2exp(stored, stored, 1<<l);
-    print_segment_blocks(data);
 }
 
 // treating as message-passing and slightly inefficient but instead
