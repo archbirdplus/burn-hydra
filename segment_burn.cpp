@@ -2,6 +2,7 @@
 #include <gmpxx.h>
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 #include "segment.h"
@@ -18,9 +19,9 @@ void setup_vars(data_t* data) {
     vars->tmp = {};
     vars->stored = {};
     if (seg->is_base_segment) {
-        vars->block_size = {20, 6};
+        vars->block_size = {3};
     } else {
-        vars->block_size = {20, 20, 20, 20, 20, 20, 20, 20}; // TODO: optimize
+        vars->block_size = {3}; // TODO: optimize
     }
 
     uint64_t max_size = vars->block_size[0];
@@ -112,18 +113,22 @@ int segment_burn(data_t* data, int max_iterations) {
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
-        // gmp_printf("%d sending left: %Zd\n", segment->world_rank, output);
+        gmp_printf("%d sending left: %Zd\n", segment->world_rank, output);
         sendLeft(segment, output);
     } else {
         // assert(mpz_sgn(output) == 0);
-        mpz_set(update, output);
+        // mpz_set(update, output);
+        mpz_mul_2exp(update, output, 1<<l);
     }
     mpz_clear(output); // TODO: again, remove alloc
 
     if (!dont_communicate_left) {
         receiveLeft(segment, update);
-        // gmp_printf("%d receiving left: %Zd\n", segment->world_rank, update);
+        gmp_printf("%d receiving left: %Zd\n", segment->world_rank, update);
     }
+
+    // incorrect
+    mpz_add(data->vars->stored[0], data->vars->stored[0], update);
 
     // compensating for small shifts is not necessary as long
     // as they remain in sync
@@ -137,9 +142,15 @@ int segment_burn(data_t* data, int max_iterations) {
 // Updates x, representing the entire right side of the integer.
 void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
     const uint64_t end_size = data->vars->block_size[i];
+    int blocks_count = data->vars->block_size.size();
     assert(e >= end_size);
     std::vector<mpz_ptr> p3 = data->vars->p3;
     if (e == end_size) {
+        std::cout << "before:";
+        for (int j = 0; j < i; j++) {
+            std::cout << "  ";
+        }
+        gmp_printf("%Zd...\n", x);
         // end of funnel, go to next mem block
         // it will return the integer to pass back up
         // TODO: this bit of the integer hasn't been updated yet,
@@ -147,6 +158,11 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
         // calling convention may differ
         // x *= p3t
         // return top(x) + recv_carry(tail(x))
+        std::cout << "      :";
+        for (int j = 0; j < i; j++) {
+            std::cout << "  ";
+        }
+        gmp_printf("*%Zd/%d\n", p3[e], 1<<(1<<e));
         mpz_mul(x, x, p3[e]);
         mpz_t tmp2; mpz_init(tmp2);
         mpz_fdiv_r_2exp(tmp2, x, 1<<e);
@@ -158,8 +174,24 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
         // Technically, we could pass the same mpz into both...
         // they're never needed at the same time
         mpz_add(x, x, res);
+        std::cout << "      :";
+        for (int j = 0; j < i; j++) {
+            std::cout << "  ";
+        }
+        gmp_printf("+%Zd\n", res);
         mpz_clear(res);
+        std::cout << "after: ";
+        for (int j = 0; j < i; j++) {
+            std::cout << "  ";
+        }
+        gmp_printf("%Zd\n", x);
     } else {
+        std::cout << "[ ";
+        for (int j = 0; j < i; j++) {
+            std::cout << "  ";
+        }
+        gmp_printf("%Zd...\n", x);
+
         // e > end_size
         // TODO: preallocate this
         mpz_t next; mpz_init(next);
@@ -178,6 +210,11 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
             mpz_add(x, x, next);
         }
         mpz_clear(next);
+        std::cout << "=>";
+        for (int j = 0; j < i; j++) {
+            std::cout << "  ";
+        }
+        gmp_printf("%Zd]\n", x);
     }
     // Return is handled by updating x.
 }
@@ -218,27 +255,31 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // somehow addition is already first...
             // This function handles everything it needs already.
             // TODO: basecase_burn handles way too much, why, how?
-            // gmp_printf("H^%d(%Zd) + %Zd = ... \n", 1<<e, stored, add);
+            gmp_printf("H^%d(%Zd) + %Zd = ... \n", 1<<e, stored, add);
             basecase_burn(data, ret, add, e, i);
-            // gmp_printf("    ... H{} = %Zd:%Zd\n", ret, stored);
+            gmp_printf("    ... H{} = %Zd:%Zd\n", ret, stored);
             mpz_set(rop, ret);
             mpz_clear(ret);
             return;
         } else {
             mpz_mul(stored, stored, p3[e]);
             mpz_fdiv_r_2exp(tmp, stored, t);
+            mpz_fdiv_q_2exp(stored, stored, t);
             // Otherwise continue passing data forth.
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
             receiveRight(segment, ret);
-            // gmp_printf("%d receiving right: %Zd\n", segment->world_rank, ret);
+            gmp_printf("%d receiving right: %Zd\n", segment->world_rank, ret);
             sendRight(segment, tmp);
-            // gmp_printf("%d sending right: %Zd\n", segment->world_rank, tmp);
+            gmp_printf("%d   sending right: %Zd\n", segment->world_rank, tmp);
             mpz_add(stored, stored, ret);
         }
         mpz_clear(ret);
     } else {
         funnel_until(data, stored, e, i+1);
+    }
+    if (segment->world_rank == 1) {
+        
     }
     mpz_add(stored, stored, add);
     mpz_fdiv_q_2exp(tmp, stored, 1<<l);
@@ -259,6 +300,7 @@ void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     for (uint64_t i = 0; i < t; i++) {
         mpz_fdiv_q_2exp(tmp, stored, 1);
         mpz_add(stored, stored, tmp);
+        gmp_printf("    stored %Zd\n", stored);
     }
 
     mpz_add(stored, stored, add);

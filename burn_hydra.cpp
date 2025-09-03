@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t iterations = 1<<20;
+    int64_t iterations = 1<<5;
     problem_t problem = {
         .initial = 3,
         .iterations = iterations,
@@ -33,20 +33,18 @@ int main(int argc, char** argv) {
         .prune_bits = false,
     };
 
-    // uint64_t input_size = config.block_sizes[world_rank];
-    // uint64_t output_size = config.block_sizes[std::clamp(world_rank-1, 0, 2)];
-
     data_t* data = segment_init(&problem, &config, &segment);
     while (iterations > 0) {
         int performed = segment_burn(data, iterations);
         iterations -= performed;
         // TODO: occasionally checkpoint
-        std::cout << "iterations left: " << iterations << std::endl;
+        std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
+        print_segment_blocks(data);
     }
 
-    // print_segment_blocks(data);
-    print_smallest_mod(data, (uint64_t)1<<32);
-    print_smallest_mod(data, 256);
+    print_segment_blocks(data);
+    // print_smallest_mod(data, (uint64_t)1<<32);
+    // print_smallest_mod(data, 256);
 
     MPI_Finalize();
 }
