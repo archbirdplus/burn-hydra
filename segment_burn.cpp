@@ -19,9 +19,9 @@ void setup_vars(data_t* data) {
     vars->tmp = {};
     vars->stored = {};
     if (seg->is_base_segment) {
-        vars->block_size = {2};
+        vars->block_size = {2, 2};
     } else {
-        vars->block_size = {2}; // TODO: optimize
+        vars->block_size = {4, 3, 2}; // TODO: optimize
     }
 
     uint64_t max_size = vars->block_size[0];
@@ -127,8 +127,10 @@ int segment_burn(data_t* data, int max_iterations) {
         gmp_printf("%d receiving left: %Zd\n", segment->world_rank, update);
     }
 
-    // incorrect
-    // mpz_add(data->vars->stored[0], data->vars->stored[0], update);
+    // Problem... why is this now happening _before_ the computation,
+    // while the recursive-burn's addition happens after?
+    mpz_add(data->vars->stored[0], data->vars->stored[0], update);
+    mpz_set_ui(update, 0);
 
     // compensating for small shifts is not necessary as long
     // as they remain in sync
@@ -274,10 +276,12 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             mpz_clear(ret);
             return;
         } else {
+            gmp_printf("%d multiplying %Zd...\n", segment->world_rank, stored);
             mpz_mul(stored, stored, p3[e]);
             gmp_printf("%d splitting: %Zd\n", segment->world_rank, stored);
             mpz_fdiv_r_2exp(tmp, stored, t);
             mpz_fdiv_q_2exp(stored, stored, t);
+            gmp_printf("%d     split: [%Zd:%Zd]\n", segment->world_rank, stored, tmp);
             // Otherwise continue passing data forth.
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
@@ -286,6 +290,7 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             sendRight(segment, tmp);
             gmp_printf("%d   sending right: %Zd\n", segment->world_rank, tmp);
             mpz_add(stored, stored, ret);
+            gmp_printf("%d     stored+=ret: %Zd\n", segment->world_rank, stored);
         }
         mpz_clear(ret);
     } else {

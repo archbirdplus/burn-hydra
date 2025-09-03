@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t iterations = 1<<4;
+    int64_t iterations = 1<<5;
     problem_t problem = {
         .initial = 3,
         .iterations = iterations,
@@ -38,8 +38,8 @@ int main(int argc, char** argv) {
         int performed = segment_burn(data, iterations);
         iterations -= performed;
         // TODO: occasionally checkpoint
-        std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
         print_segment_blocks(data);
+        std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
     }
     segment_finalize(data);
 
