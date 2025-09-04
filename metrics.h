@@ -5,6 +5,7 @@
 #include "common.h"
 
 enum timer_class {
+    initializing,
     waiting_send_left,
     waiting_send_left_mpi,
     waiting_send_left_copy,
@@ -49,10 +50,10 @@ typedef struct metrics {
 
 metrics_t* init_metrics();
 
-void start_timer(metrics_t*, timer_class);
-void stop_timer(metrics_t*, timer_class);
+void timer_start(metrics_t*, timer_class);
+void timer_stop(metrics_t*, timer_class);
 
-void count_counter(metrics_t*, counter_class);
+void counter_count(metrics_t*, counter_class);
 
 void dump_metrics(metrics_t*);
 

@@ -7,6 +7,7 @@
 
 #include "segment.h"
 #include "communicate.h"
+#include "metrics.h"
 
 void setup_vars(data_t* data) {
     segment_t* seg = data->segment;
@@ -70,6 +71,7 @@ data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
     data_t* data = (data_t*)malloc(sizeof(data_t));
     vars_t* vars = (vars_t*)malloc(sizeof(vars_t));
     metrics_t* metrics = init_metrics();
+    timer_start(metrics, initializing);
     *data = {
         .problem = problem,
         .config = config,
@@ -78,6 +80,7 @@ data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
         .metrics = metrics,
     };
     setup_vars(data);
+    timer_stop(metrics, initializing);
     return data;
 }
 
@@ -123,9 +126,12 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     bool dont_communicate_left = segment->is_top_segment;
 
     mpz_ptr update = vars->update;
-    mpz_t output; mpz_init(output);
     // TODO: again, rop and add parameters could be merged
+    mpz_t output; mpz_init(output);
+    // Note that this timer is paused at the leaf cases.
+    timer_start(data->metrics, grinding_chain);
     recursive_burn(data, output, update, e, 0);
+    timer_stop(data->metrics, grinding_chain);
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
@@ -254,14 +260,19 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // somehow addition is already first...
             // This function handles everything it needs already.
             // TODO: basecase_burn handles way too much, why, how?
+            timer_stop(data->metrics, grinding_chain);
+            timer_start(data->metrics, grinding_basecase);
             basecase_burn(data, ret, add, e, i);
             mpz_set(rop, ret);
             mpz_clear(ret);
+            timer_stop(data->metrics, grinding_basecase);
+            timer_start(data->metrics, grinding_chain);
             return;
         } else {
             mpz_mul(stored, stored, p3[e]);
             mpz_fdiv_r_2exp(tmp, stored, t);
             mpz_fdiv_q_2exp(stored, stored, t);
+            timer_stop(data->metrics, grinding_chain);
             // Otherwise continue passing data forth.
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
@@ -270,6 +281,7 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             sendRight(segment, tmp);
             // gmp_printf("%d      sent right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
             mpz_add(stored, stored, ret);
+            timer_start(data->metrics, grinding_chain);
         }
         mpz_clear(ret);
     } else {

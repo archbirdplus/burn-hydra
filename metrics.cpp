@@ -1,10 +1,12 @@
 #include <chrono>
 #include <cassert>
 #include <iostream>
+#include <format>
 
 #include "metrics.h"
 
 const char* timer_class_names[] = {
+    "initializing variables",
     "waiting to send left",
     "waiting to send left (mpi)",
     "waiting to send left (copying)",
@@ -39,7 +41,7 @@ metrics_t* init_metrics() {
     return metrics;
 }
 
-void start_timer(metrics_t* metrics, timer_class t) {
+void timer_start(metrics_t* metrics, timer_class t) {
     if (auto start = metrics->timers.last_start[t]) {
         assert(false);
     } else {
@@ -47,19 +49,20 @@ void start_timer(metrics_t* metrics, timer_class t) {
     }
 }
 
-void stop_timer(metrics_t* metrics, timer_class t) {
+void timer_stop(metrics_t* metrics, timer_class t) {
     if (auto start = metrics->timers.last_start[t]) {
         const auto delta = hydra_clock::now() - *start;
         if (delta < std::chrono::nanoseconds::zero()) {
             std::cerr << "Experienced time travel: " << delta.count() << " ns time elapased." << std::endl;
         }
         metrics->timers.total[t] += delta;
+        metrics->timers.last_start[t] = std::nullopt;
     } else {
         assert(false);
     }
 }
 
-void count_counter(metrics_t* metrics, counter_class t) {
+void counter_count(metrics_t* metrics, counter_class t) {
     metrics->counters.counter[t] += 1;
 }
 
