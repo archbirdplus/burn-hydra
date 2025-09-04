@@ -18,11 +18,18 @@ void setup_vars(data_t* data) {
     vars->p3 = {};
     vars->tmp = {};
     vars->stored = {};
-    if (seg->is_base_segment) {
-        vars->block_size = {28, 8};
-    } else {
-        vars->block_size = {28, 28}; // TODO: optimize
+    switch (seg->world_rank) {
+    case 0:
+        vars->block_size = {14, 8};
+        break;
+    case 1:
+        vars->block_size = {26, 14};
+        break;
+    default:
+        vars->block_size = {26, 26};
+        break;
     }
+    // TODO: optimize
 
     uint64_t max_size = vars->block_size[0];
     mpz_t r; mpz_init_set_ui(r, 3);
