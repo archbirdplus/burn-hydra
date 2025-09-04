@@ -23,10 +23,13 @@ void setup_vars(data_t* data) {
         vars->block_size = {14, 8};
         break;
     case 1:
-        vars->block_size = {26, 14};
+        vars->block_size = {25, 14};
+        break;
+    case 2:
+        vars->block_size = {27, 25};
         break;
     default:
-        vars->block_size = {26, 26};
+        vars->block_size = {28};
         break;
     }
     // TODO: optimize
@@ -43,6 +46,8 @@ void setup_vars(data_t* data) {
             mpz_mul(r, r, r);
         }
     }
+    mpz_clear(r);
+
     const int s = vars->block_size.size();
     for (int i = 0; i < s; i++) {
         mpz_ptr a = (mpz_ptr) malloc (sizeof(mpz_t));
@@ -59,7 +64,6 @@ void setup_vars(data_t* data) {
     mpz_ptr stored = vars->stored[vars->stored.size()-1];
     gmp_printf("rank %d init to %Zd\n", data->segment->world_rank, vars->stored[vars->stored.size()-1]);
     gmp_printf("rank %d aka init to %Zd\n", data->segment->world_rank, stored);
-    mpz_clear(r);
 }
 
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
@@ -123,7 +127,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
-        gmp_printf("%d      sent left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
+        // gmp_printf("%d      sent left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
         sendLeft(segment, output);
     } else {
         // assert(mpz_sgn(output) == 0);
@@ -134,7 +138,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
 
     if (!dont_communicate_left) {
         receiveLeft(segment, update);
-        gmp_printf("%d  received left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
+        // gmp_printf("%d  received left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
     }
 
     // Problem... why is this now happening _before_ the computation,
@@ -260,9 +264,9 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
             receiveRight(segment, ret);
-            gmp_printf("%d  received right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
+            // gmp_printf("%d  received right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
             sendRight(segment, tmp);
-            gmp_printf("%d      sent right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
+            // gmp_printf("%d      sent right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
             mpz_add(stored, stored, ret);
         }
         mpz_clear(ret);
