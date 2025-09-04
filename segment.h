@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "common.h"
+#include "metrics.h"
 
 typedef struct vars {
     mpz_ptr update;
@@ -20,6 +21,7 @@ typedef struct data {
     config_t* config;
     segment_t* segment;
     vars_t* vars;
+    metrics_t* metrics;
 } data_t;
 
 data_t* segment_init(problem_t*, config_t*, segment_t*);

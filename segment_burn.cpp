@@ -69,11 +69,13 @@ void setup_vars(data_t* data) {
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
     data_t* data = (data_t*)malloc(sizeof(data_t));
     vars_t* vars = (vars_t*)malloc(sizeof(vars_t));
+    metrics_t* metrics = init_metrics();
     *data = {
         .problem = problem,
         .config = config,
         .segment = segment,
         .vars = vars,
+        .metrics = metrics,
     };
     setup_vars(data);
     return data;
