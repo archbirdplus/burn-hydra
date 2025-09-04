@@ -31,7 +31,10 @@ void setup_vars(data_t* data) {
         mpz_ptr next = (mpz_ptr) malloc (sizeof(mpz_t));
         mpz_init_set(next, r);
         vars->p3.push_back(next);
-        mpz_mul(r, r, r); // could be skipped at end
+        // skip the last squaring
+        if (i < max_size) {
+            mpz_mul(r, r, r);
+        }
     }
     const int s = vars->block_size.size();
     for (int i = 0; i < s; i++) {
