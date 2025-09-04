@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t iterations = (uint64_t)1<<31;
+    int64_t iterations = (uint64_t)1<<30;
     problem_t problem = {
         .initial = 3,
         .iterations = iterations,

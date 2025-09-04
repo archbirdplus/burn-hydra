@@ -113,7 +113,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
-        gmp_printf("%d sending left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
+        gmp_printf("%d      sent left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
         sendLeft(segment, output);
     } else {
         // assert(mpz_sgn(output) == 0);
@@ -124,7 +124,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
 
     if (!dont_communicate_left) {
         receiveLeft(segment, update);
-        gmp_printf("%d receiving left: %d\n", segment->world_rank, mpz_sizeinbase(output, 2));
+        gmp_printf("%d  received left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
     }
 
     // Problem... why is this now happening _before_ the computation,
@@ -249,10 +249,10 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // Otherwise continue passing data forth.
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
-            gmp_printf("%d receiving right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
             receiveRight(segment, ret);
-            gmp_printf("%d   sending right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
+            gmp_printf("%d  received right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
             sendRight(segment, tmp);
+            gmp_printf("%d      sent right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
             mpz_add(stored, stored, ret);
         }
         mpz_clear(ret);
