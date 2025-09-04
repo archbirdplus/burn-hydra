@@ -54,5 +54,7 @@ void stop_timer(metrics_t*, timer_class);
 
 void count_counter(metrics_t*, counter_class);
 
+void dump_metrics(metrics_t*);
+
 #endif // METRICS_H
 
