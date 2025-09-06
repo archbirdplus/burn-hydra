@@ -124,8 +124,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     if (e >= l) {
         e = l;
     } else {
-        // An interesting situtation, we might accidentally hit the basecase.
-        // But that is not necessarily invalidating.
+        // TODO: handle small steps
     }
     segment_t* segment = data->segment;
     vars_t* vars = data->vars;

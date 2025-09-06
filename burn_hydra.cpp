@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdint>
+#include <cassert>
 
 #include "common.h"
 
@@ -25,10 +26,10 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t iterations = (uint64_t)1<<28;
+    int64_t max_iterations = (uint64_t)1<<28;
     problem_t problem = {
         .initial = 3,
-        .iterations = iterations,
+        .iterations = max_iterations,
     };
 
     config_t config = {
@@ -37,16 +38,28 @@ int main(int argc, char** argv) {
     };
 
     data_t* data = segment_init(&problem, &config, &segment);
-    int64_t last_print = iterations;
-    while (iterations > 0) {
-        if (last_print - iterations >= (1<<24)) {
-            std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
-            last_print = iterations;
+
+    int64_t checkpoint_interval = 1<<28;
+
+    int64_t next_special = 1<<20; // TODO: must be greater than the max size, or should have sub-steps
+    int64_t next_checkpoint = 1<<28; // TODO: resolve dynamically
+    int64_t iterations = 0;
+    while (iterations < max_iterations) {
+        if (iterations >= next_checkpoint) {
+            assert(iterations == next_checkpoint);
+            // TODO: do checkpoint
+            next_checkpoint += checkpoint_interval;
         }
-        int64_t performed = segment_burn(data, iterations);
-        iterations -= performed;
-        // TODO: occasionally checkpoint
-        // print_segment_blocks(data);
+        if (iterations >= next_special) {
+            assert(iterations == next_special);
+            if (segment.world_rank == 0) {
+                // TODO: perform fancy logs like H^2^{28}(3) ≡ { } (mod 2^128) ≡ { } (mod 3^128)
+                std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
+            }
+            next_special *= 2;
+        }
+        int64_t performed = segment_burn(data, std::min(next_special, next_checkpoint) - iterations);
+        iterations += performed;
     }
     segment_finalize(data);
 
