@@ -34,7 +34,7 @@ typedef struct timers {
 
 enum counter_class {
     messages_received_right,
-    messages_received_right_empty,
+    messages_received_right_nonempty,
     _counter_classes,
 };
 
@@ -48,7 +48,7 @@ typedef struct metrics {
     counters_t counters;
 } metrics_t;
 
-metrics_t* init_metrics();
+void init_metrics(metrics_t*);
 
 void timer_start(metrics_t*, timer_class);
 void timer_stop(metrics_t*, timer_class);

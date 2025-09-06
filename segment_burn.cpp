@@ -1,5 +1,6 @@
 #include <gmp.h>
 #include <gmpxx.h>
+#include <cstdlib>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
@@ -21,13 +22,22 @@ void setup_vars(data_t* data) {
     vars->stored = {};
     switch (seg->world_rank) {
     case 0:
-        vars->block_size = {14, 8};
+        vars->block_size = {18, 8};
         break;
     case 1:
-        vars->block_size = {25, 14};
+        vars->block_size = {20, 18};
         break;
     case 2:
-        vars->block_size = {27, 25};
+        vars->block_size = {22, 20};
+        break;
+    case 3:
+        vars->block_size = {24, 22};
+        break;
+    case 4:
+        vars->block_size = {26, 24};
+        break;
+    case 5:
+        vars->block_size = {28, 26};
         break;
     default:
         vars->block_size = {28};
@@ -68,9 +78,10 @@ void setup_vars(data_t* data) {
 }
 
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
-    data_t* data = (data_t*)malloc(sizeof(data_t));
-    vars_t* vars = (vars_t*)malloc(sizeof(vars_t));
-    metrics_t* metrics = init_metrics();
+    metrics_t* metrics = (metrics_t*) malloc (sizeof(metrics_t));
+    data_t* data = (data_t*) malloc (sizeof(data_t));
+    vars_t* vars = (vars_t*) malloc (sizeof(vars_t));
+    init_metrics(metrics);
     timer_start(metrics, initializing);
     *data = {
         .problem = problem,
@@ -136,7 +147,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
         // gmp_printf("%d      sent left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
-        sendLeft(segment, output);
+        sendLeft(data, output);
     } else {
         // assert(mpz_sgn(output) == 0);
         // mpz_set(update, output);
@@ -145,7 +156,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     mpz_clear(output); // TODO: again, remove alloc
 
     if (!dont_communicate_left) {
-        receiveLeft(segment, update);
+        receiveLeft(data, update);
         // gmp_printf("%d  received left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
     }
 
@@ -276,12 +287,16 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             // Otherwise continue passing data forth.
             // TODO: ideally recv/send the buffer than afterwards format it...
             // check perf though
-            receiveRight(segment, ret);
+            receiveRight(data, ret);
             // gmp_printf("%d  received right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
-            sendRight(segment, tmp);
+            sendRight(data, tmp);
             // gmp_printf("%d      sent right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
-            mpz_add(stored, stored, ret);
+            counter_count(data->metrics, messages_received_right);
+            if (mpz_sgn(ret) != 0) {
+                counter_count(data->metrics, messages_received_right_nonempty);
+            }
             timer_start(data->metrics, grinding_chain);
+            mpz_add(stored, stored, ret);
         }
         mpz_clear(ret);
     } else {

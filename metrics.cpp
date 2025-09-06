@@ -27,22 +27,23 @@ const char* timer_class_names[] = {
 
 const char* counter_class_names[] = {
     "messages received from the right",
-    "messages received from the right, empty",
+    "messages received from the right, nonempty",
     "uh oh",
 };
 
-metrics_t* init_metrics() {
-    metrics_t* metrics = (metrics_t*) malloc (sizeof(metrics_t));
+void init_metrics(metrics_t* metrics) {
+    // for some reason malloc here is _really_ bad, and puts
+    // a brk instead of this whole function specifically in -O2
     for (int i = 0; i < _timer_classes; i++) {
         metrics->timers.total[i] = std::chrono::nanoseconds::zero();
         metrics->timers.last_start[i] = std::nullopt;
     }
     // the rest are zero-initialized
-    return metrics;
 }
 
 void timer_start(metrics_t* metrics, timer_class t) {
     if (auto start = metrics->timers.last_start[t]) {
+        std::cout << "ouch: Timer was started twice." << std::endl;
         assert(false);
     } else {
         metrics->timers.last_start[t] = hydra_clock::now();
@@ -53,11 +54,12 @@ void timer_stop(metrics_t* metrics, timer_class t) {
     if (auto start = metrics->timers.last_start[t]) {
         const auto delta = hydra_clock::now() - *start;
         if (delta < std::chrono::nanoseconds::zero()) {
-            std::cerr << "Experienced time travel: " << delta.count() << " ns time elapased." << std::endl;
+            std::cout << "ouch: Experienced time travel: " << delta.count() << " ns time elapased." << std::endl;
         }
         metrics->timers.total[t] += delta;
         metrics->timers.last_start[t] = std::nullopt;
     } else {
+        std::cout << "ouch: Timer was stopped twice." << std::endl;
         assert(false);
     }
 }
@@ -67,10 +69,15 @@ void counter_count(metrics_t* metrics, counter_class t) {
 }
 
 void dump_metrics(metrics_t* metrics) {
+    std::cout << "Some metrics were tracked:" << std::endl;
     for (int i = 0; i < _timer_classes; i++) {
         const auto time = metrics->timers.total[i];
         std::chrono::duration<double> seconds = time;
-        std::cout << seconds.count() << " s spent " << timer_class_names[i] << "." << std::endl;
+        std::cout << "\t" << seconds.count() << " s spent " << timer_class_names[i] << "." << std::endl;
+    }
+    for (int i = 0; i < _counter_classes; i++) {
+        const auto counts = metrics->counters.counter[i];
+        std::cout << "\t" << counts << " " << counter_class_names[i] << "." << std::endl;
     }
 }
 

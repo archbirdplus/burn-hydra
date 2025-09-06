@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     data_t* data = segment_init(&problem, &config, &segment);
     int64_t last_print = iterations;
     while (iterations > 0) {
-        if (last_print - iterations > (1<<24)) {
+        if (last_print - iterations >= (1<<24)) {
             std::cout << "rank " << segment.world_rank << ": " << iterations << " iterations left" << std::endl;
             last_print = iterations;
         }
