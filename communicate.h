@@ -12,5 +12,7 @@ void receiveLeft(data_t*, mpz_t);
 void sendRight(data_t*, mpz_t);
 void receiveRight(data_t*, mpz_t);
 
+void gather(data_t*, mpz_t, mpz_ptr*, int);
+
 #endif // COMMUNICATE_H
 

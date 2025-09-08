@@ -27,8 +27,11 @@ typedef struct data {
 data_t* segment_init(problem_t*, config_t*, segment_t*);
 int segment_burn(data_t*, int64_t);
 void segment_finalize(data_t*);
+
 void print_segment_blocks(data_t*);
-void print_smallest_mod(data_t* data, uint64_t mod);
+void print_smallest_mod(data_t*, uint64_t);
+void print_signature(data_t*, uint64_t, uint64_t);
+void print_special_2exp(data_t*, int64_t);
 
 #endif // SEGMENT_H
 

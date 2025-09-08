@@ -10,9 +10,10 @@
 void send(metrics_t* metrics, int rank, int d, mpz_t x) {
     timer_start(metrics, d > 0 ? waiting_send_left : waiting_send_right);
     timer_start(metrics, d > 0 ? waiting_send_left_copy : waiting_send_right_copy);
-    const size_t size = 8; // bytes per word?
-    const size_t numb = 8*size; // bits per word
+    const size_t size = 8; // bytes per limb?
+    const size_t numb = GMP_LIMB_BITS; // nah, don't do nails
     const size_t count = (mpz_sizeinbase(x, 2) + numb-1)/numb;
+    assert(count == mpz_size(x) || count == 1);
     void* buf = malloc(count*size);
     size_t countp = 0;
     mpz_export(buf, &countp, 1, size, 0, 0, x);
@@ -57,4 +58,51 @@ void sendRight(data_t* data, mpz_t x) {
 void receiveRight(data_t* data, mpz_t x) {
     recv(data->metrics, data->segment->world_rank-1, -1, x);
 }
+
+
+void gather(data_t* data, mpz_t item, mpz_ptr* buffer, int root) {
+    const int world_size = data->segment->world_size;
+    // timer
+    // Despite our willingness to do it, both GMP and MPI
+    // count object sizes in `int`- the signed 32 bit integer.
+    // By specifying `long`s we can get roughly 2^38 sizes messages,
+    // after which everything would crash hard and in unison.
+    int* sizesbuf = (int*) malloc(world_size * sizeof(int));
+    int* displs = (int*) malloc(world_size * sizeof(int));
+    const uint64_t limb_size = 8; // bytes?
+    const uint64_t send_limb_count = mpz_size(item);
+    void* sendbuf = malloc(send_limb_count*(uint64_t)limb_size);
+    size_t sent_limb_count;
+    // timer
+    // TODO: this should be incorrect, in the edge case that
+    // the size allocated is slightly longer than the size used
+    const int order = -1;
+    mpz_export(sendbuf, &sent_limb_count, order, limb_size, 0, 0, item);
+    assert(send_limb_count == sent_limb_count);
+    // timer
+    int send_limb_count_int = static_cast<int>(send_limb_count);
+    MPI_Gather(&send_limb_count_int, 1, MPI_INT, sizesbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
+    uint64_t* limbs;
+    if (data->segment->world_rank == root) {
+        displs[0] = 0;
+        for (int i = 1; i < world_size; i++) {
+            displs[i] = displs[0] + sizesbuf[i-1];
+        }
+        limbs = (uint64_t*) calloc(displs[world_size-1] + sizesbuf[world_size-1], sizeof(uint64_t));
+    }
+    MPI_Gatherv(sendbuf, send_limb_count_int, MPI_LONG, limbs, sizesbuf, displs, MPI_LONG, root, MPI_COMM_WORLD);
+    // timer
+    if (data->segment->world_rank == root) {
+        for (int i = 0; i < world_size; i++) {
+            mpz_ptr rop = buffer[i];
+            mpz_import(rop, static_cast<size_t>(sizesbuf[i]), order, limb_size, 0, 0, (void*)(&limbs[displs[i]]));
+        }
+        free(limbs);
+    }
+    free(sendbuf);
+    free(displs);
+    free(sizesbuf);
+    // timer
+}
+
 
