@@ -6,6 +6,7 @@
 // #include <gmp.h>
 // #include <stdio.h>
 // #include <algorithm>
+#include <vector>
 #include <cstdint>
 
 typedef struct problem {
@@ -14,8 +15,11 @@ typedef struct problem {
 } problem_t;
 
 typedef struct config {
-    uint64_t block_params[3];
+    std::vector<std::vector<uint64_t>> block_sizes_funnel;
+    std::vector<std::vector<uint64_t>> block_sizes_chain;
+    uint64_t global_block_max; // size of largest block in system
     bool prune_bits;
+    int64_t checkpoint_interval;
 } config_t;
 
 typedef struct segment {

@@ -78,6 +78,7 @@ void setup_vars(data_t* data) {
 }
 
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
+    // TODO: account for config
     metrics_t* metrics = (metrics_t*) malloc (sizeof(metrics_t));
     data_t* data = (data_t*) malloc (sizeof(data_t));
     vars_t* vars = (vars_t*) malloc (sizeof(vars_t));

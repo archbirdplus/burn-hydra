@@ -27,15 +27,9 @@ int main(int argc, char** argv) {
     };
 
     int64_t max_iterations = (uint64_t)1<<21;
-    problem_t problem = {
-        .initial = 3,
-        .iterations = max_iterations,
-    };
 
-    config_t config = {
-        .block_params= { },
-        .prune_bits = false,
-    };
+    problem_t problem;
+    config_t config;
 
     data_t* data = segment_init(&problem, &config, &segment);
 

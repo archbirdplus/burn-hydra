@@ -13,7 +13,9 @@ typedef struct vars {
     std::vector<mpz_ptr> p3;
     std::vector<mpz_ptr> tmp;
     std::vector<mpz_ptr> stored;
-    std::vector<uint64_t> block_size; // from left to right, including input (stored) and output (not stored) sizes
+
+    std::vector<uint64_t> block_size; // from left to right, including input (stored) and output (not stored) sizes; log length
+    std::vector<uint64_t> global_offset; // number of bits from the basecase
 } vars_t;
 
 typedef struct data {

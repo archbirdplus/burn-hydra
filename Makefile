@@ -1,12 +1,24 @@
 
-SOURCES=burn_hydra.cpp segment_burn.cpp segment_results.cpp communicate.cpp metrics.cpp
-HEADERS=common.h segment.h communicate.h metrics.h
+
+SOURCES=src/segment_burn.cpp src/segment_results.cpp src/communicate.cpp src/metrics.cpp src/parse.cpp
+BURN_SOURCES=src/burn_hydra.cpp
+TEST_SOURCES=src/test.cpp
+HEADERS=include/common.h include/segment.h include/communicate.h include/metrics.h include/parse.h
 
 MPICC?=mpic++
-CFLAGS+=-std=c++17 -lgmp -lgmpxx -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib
+CFLAGS+=-std=c++17 -lgmp -lgmpxx -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I include
 
 burn_hydra: ${SOURCES} ${HEADERS} out
-	${MPICC} ${CFLAGS} -g -O2 -o out/burn_hydra ${SOURCES}
+	${MPICC} ${CFLAGS} -g -O2 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES}
+
+test: test.test
+
+test.test: ${TESTS} ${SOURCES} ${HEADERS} testdir
+	${MPICC} ${CFLAGS} -g -O0 -o testdir/test ${TEST_SOURCES} ${SOURCES}
+	./testdir/test
+
+testdir:
+	mkdir testdir
 
 out:
 	mkdir out
