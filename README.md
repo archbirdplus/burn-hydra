@@ -5,16 +5,11 @@ Burn-Hydra is a program that attempts to compute extremely large iterations of t
 
 The present goal is to compute the `H^114817814715809(10)`, which has the potential to resolve the halting problem for the Turing machine [`1RB1RE_1LC1LD_---1LA_1LB1LE_0RF0RA_1LD1RF`](https://wiki.bbchallenge.org/wiki/1RB1RE_1LC1LD_---1LA_1LB1LE_0RF0RA_1LD1RF). This will require at least 4 TB of storage, not accounting for temporary or auxiliary variables.
 
-## Usage
+## Building
 
-Requirements:
-- GMP
-- MPI
+Burn-Hydra depends on both GMP and an MPI implementation. For compilation instructions, inspect the Makefile.
 
-Burn-Hydra depends on both GMP and an MPI implementation. Compilation looks something like this, but might need to be adapted for your system:
-```
-make
-```
+## Running
 
 To use Burn-Hydra to compute the `$ITERATION`'th Hydra value strarting from 3, you will need a command like this:
 ```
