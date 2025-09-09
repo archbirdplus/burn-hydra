@@ -70,6 +70,7 @@ void test_parse_config() {
     config_t config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .block_sizes_used = {},
         .global_block_max = 0,
         .prune_bits = 0,
         .checkpoint_interval = 0,
@@ -141,6 +142,7 @@ void test_parse_args() {
     config_t config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .block_sizes_used = {},
         .global_block_max = 0,
         .prune_bits = 0,
         .checkpoint_interval = 0,
@@ -163,6 +165,7 @@ void test_parse_args() {
     config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .block_sizes_used = {},
         .global_block_max = 0,
         .prune_bits = 0,
         .checkpoint_interval = 0,

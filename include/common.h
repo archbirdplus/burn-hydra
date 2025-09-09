@@ -17,6 +17,7 @@ typedef struct problem {
 typedef struct config {
     std::vector<std::vector<uint64_t>> block_sizes_funnel;
     std::vector<std::vector<uint64_t>> block_sizes_chain;
+    std::vector<std::vector<uint64_t>> block_sizes_used;
     uint64_t global_block_max; // size of largest block in system
     bool prune_bits;
     int64_t checkpoint_interval;

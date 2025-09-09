@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     config_t config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .block_sizes_used = {},
         .global_block_max = 0,
         .prune_bits = 0,
         .checkpoint_interval = 0,

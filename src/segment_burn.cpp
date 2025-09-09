@@ -6,9 +6,67 @@
 #include <iostream>
 #include <vector>
 
+#include "common.h"
 #include "segment.h"
 #include "communicate.h"
 #include "metrics.h"
+
+void friendly_assert(bool condition, const char* message) {
+    if (!condition) {
+        std::cerr << message << std::endl;
+        exit(1);
+    }
+}
+
+void friendly_concern(bool* anyerror, bool condition, const char* message) {
+    if (!condition) {
+        *anyerror = true;
+        std::cerr << message << std::endl;
+    }
+}
+
+// Drop non-existent blocks and check for constraints.
+void constrain_config(data_t* data) {
+    config_t* config = data->config;
+    const int world_size = data->segment->world_size;
+    uint64_t* block_max = &data->config->global_block_max;
+    *block_max = 0;
+    std::vector<std::vector<uint64_t>> ramp = data->config->block_sizes_funnel;
+    std::vector<std::vector<uint64_t>> chain = data->config->block_sizes_chain;
+    int min_plat_index = ramp.size();
+    int plat_len = chain.size();
+    bool any_error = false;
+    friendly_assert(world_size <= min_plat_index || chain.size() > 0, "Not enough config segments to assign to all processes.");
+    uint64_t previous = 0;
+    for (int i = 0; i < world_size; i++) {
+        if (i < min_plat_index) {
+            config->block_sizes_used.push_back(ramp[i]);
+        } else {
+            config->block_sizes_used.push_back(chain[(i-min_plat_index)%plat_len]);
+        }
+    }
+    const auto unrolled = config->block_sizes_used;
+    for (int i = 0; i < world_size; i++) {
+        const size_t l = unrolled[i].size();
+        for (size_t j = 0; j < l; j++) {
+            uint64_t next = unrolled[i][j];
+            if (next > *block_max) {
+                *block_max = next;
+            }
+            if (j == 0 && i != 0) {
+                friendly_concern(&any_error, next == previous, "Block sizes should be consistent on segment boundaries.");
+            }
+            friendly_concern(&any_error, previous <= next, "Decreasing block sizes are currently not supported.");
+            previous = next;
+        }
+    }
+    friendly_concern(&any_error, data->problem->iterations % ((uint64_t)1<<*block_max) == 0, "Problem iterations currently may only be multiples of the largest block size.");
+    friendly_concern(&any_error, data->config->block_sizes_used.size() == static_cast<size_t>(world_size), "internal: block sizes not correctly unrolled");
+    if (any_error) {
+        std::cerr << "Constraints not met." << std::endl;
+        exit(1);
+    }
+}
 
 void setup_vars(data_t* data) {
     segment_t* seg = data->segment;
@@ -22,17 +80,15 @@ void setup_vars(data_t* data) {
     vars->tmp = {};
     vars->stored = {};
 
-    std::vector<std::vector<uint64_t>> sizes_ramp = data->config->block_sizes_funnel;
-    std::vector<std::vector<uint64_t>> sizes_plat = data->config->block_sizes_chain;
-    int min_plat_index = sizes_ramp.size();
+    std::vector<std::vector<uint64_t>> sizes = data->config->block_sizes_used;
     uint64_t offset = 0;
     for (int i = 0; i < rank; i++) {
-        std::vector<uint64_t> list = i < min_plat_index ? sizes_ramp[i] : sizes_plat[i%min_plat_index];
+        std::vector<uint64_t> list = sizes[i];
         for (size_t j = 0; j < list.size(); j++) {
             offset += (uint64_t)1<<list[j];
         }
     }
-    auto list = rank < min_plat_index ? sizes_ramp[rank] : sizes_plat[rank%min_plat_index];
+    const auto list = sizes[rank];
     for (size_t j = 0; j < list.size(); j++) {
         // segments keep blocks in reversed order
         // int i = list.size() - j - 1;
@@ -86,6 +142,7 @@ data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
         .vars = vars,
         .metrics = metrics,
     };
+    constrain_config(data);
     setup_vars(data);
     timer_stop(metrics, initializing);
     return data;
