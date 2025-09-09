@@ -17,7 +17,6 @@ void send(metrics_t* metrics, int rank, int d, mpz_t x) {
     void* buf = malloc(count*size);
     size_t countp = 0;
     mpz_export(buf, &countp, 1, size, 0, 0, x);
-    // std::cout << "expected: " << count << "; countp turns out: " << countp << std::endl;
     assert(count - countp >= 0);
     assert(count - countp <= 1);
     timer_stop(metrics, d > 0 ? waiting_send_left_copy : waiting_send_right_copy);
@@ -86,7 +85,7 @@ void gather(data_t* data, mpz_t item, mpz_ptr* buffer, int root) {
     if (data->segment->world_rank == root) {
         displs[0] = 0;
         for (int i = 1; i < world_size; i++) {
-            displs[i] = displs[0] + sizesbuf[i-1];
+            displs[i] = displs[i-1] + sizesbuf[i-1];
         }
         limbs = (uint64_t*) calloc(displs[world_size-1] + sizesbuf[world_size-1], sizeof(uint64_t));
     }

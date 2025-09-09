@@ -62,10 +62,6 @@ int main(int argc, char** argv) {
         print_special_2exp(data, -1);
     }
 
-    // print_segment_blocks(data);
-    print_smallest_mod(data, (uint64_t)1<<32);
-    print_smallest_mod(data, 256);
-
     dump_metrics(data->metrics);
 
     std::cout << "Done." << std::endl;

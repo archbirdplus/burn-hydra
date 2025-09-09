@@ -26,15 +26,18 @@ void print_smallest_mod(data_t* data, uint64_t mod) {
 // Gathers residues mod base^exp from all nodes onto rank 0 to print.
 void print_signature(data_t* data, uint64_t base, uint64_t exp) {
     // timer
+    const std::vector<mpz_ptr> stored = data->vars->stored;
+    const std::vector<uint64_t> global_offset = data->vars->global_offset;
+
     const int root = 0;
     mpz_t res; mpz_init(res); mpz_set_ui(res, 0);
     mpz_t tmp; mpz_init(tmp);
     mpz_t mod; mpz_init(mod);
     mpz_t scale; mpz_init(scale);
     mpz_t two; mpz_init(two); mpz_set_ui(two, 2);
+
     mpz_ui_pow_ui(mod, base, exp);
-    const std::vector<mpz_ptr> stored = data->vars->stored;
-    const std::vector<uint64_t> global_offset = data->vars->global_offset;
+
     const int count = stored.size();
     for (int i = 0; i < count; i++) {
         mpz_powm_ui(scale, two, global_offset[i], mod);
