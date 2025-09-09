@@ -27,22 +27,19 @@ void print_smallest_mod(data_t* data, uint64_t mod) {
 void print_signature(data_t* data, uint64_t base, uint64_t exp) {
     // timer
     const int root = 0;
-    mpz_t res; mpz_init(res);
+    mpz_t res; mpz_init(res); mpz_set_ui(res, 0);
     mpz_t tmp; mpz_init(tmp);
     mpz_t mod; mpz_init(mod);
     mpz_t scale; mpz_init(scale);
     mpz_t two; mpz_init(two); mpz_set_ui(two, 2);
     mpz_ui_pow_ui(mod, base, exp);
     const std::vector<mpz_ptr> stored = data->vars->stored;
-    const std::vector<int64_t> global_offset; // TODO
+    const std::vector<uint64_t> global_offset = data->vars->global_offset;
     const int count = stored.size();
     for (int i = 0; i < count; i++) {
-        // TODO: possibly cache previous result: this might take over 48
-        // multiplications
-        mpz_powm_ui(scale, scale, global_offset[i], mod);
+        mpz_powm_ui(scale, two, global_offset[i], mod);
         mpz_mod(tmp, stored[i], mod);
-        mpz_addmul(res, tmp, scale);
-        gmp_printf("stored %i mod %u mod = %Zd\n", i, base, tmp);
+        mpz_mul(tmp, tmp, scale);
         mpz_add(res, res, tmp);
     }
     mpz_mod(res, res, mod);
@@ -84,7 +81,7 @@ void print_signature(data_t* data, uint64_t base, uint64_t exp) {
 void print_special_2exp(data_t* data, int64_t e) {
     const segment_t* segment = data->segment;
     if (segment->world_rank == 0) {
-        gmp_printf("H^2^%u(%u) ", e, data->problem->initial);
+        gmp_printf("H^2^%d(%u) ", e, data->problem->initial);
     }
     // Note that this function must be called by every segment.
     print_signature(data, 2, 128);

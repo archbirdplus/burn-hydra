@@ -12,38 +12,34 @@
 
 void setup_vars(data_t* data) {
     segment_t* seg = data->segment;
-    seg->is_base_segment = seg->world_rank == 0;
-    seg->is_top_segment = seg->world_rank == seg->world_size-1;
+    int rank = seg->world_rank;
+    seg->is_base_segment = rank == 0;
+    seg->is_top_segment = rank == seg->world_size-1;
 
     vars_t* vars = data->vars;
     vars->update = (mpz_ptr) malloc (sizeof(mpz_t)); // TODO: coalesce this into another tmp
     vars->p3 = {};
     vars->tmp = {};
     vars->stored = {};
-    switch (seg->world_rank) {
-    case 0:
-        vars->block_size = {18, 8};
-        break;
-    case 1:
-        vars->block_size = {20, 18};
-        break;
-    case 2:
-        vars->block_size = {22, 20};
-        break;
-    case 3:
-        vars->block_size = {24, 22};
-        break;
-    case 4:
-        vars->block_size = {26, 24};
-        break;
-    case 5:
-        vars->block_size = {28, 26};
-        break;
-    default:
-        vars->block_size = {28};
-        break;
+
+    std::vector<std::vector<uint64_t>> sizes_ramp = data->config->block_sizes_funnel;
+    std::vector<std::vector<uint64_t>> sizes_plat = data->config->block_sizes_chain;
+    int min_plat_index = sizes_ramp.size();
+    uint64_t offset = 0;
+    for (int i = 0; i < rank; i++) {
+        std::vector<uint64_t> list = i < min_plat_index ? sizes_ramp[i] : sizes_plat[i%min_plat_index];
+        for (int j = 0; j < list.size(); j++) {
+            offset += (uint64_t)1<<list[j];
+        }
     }
-    // TODO: optimize
+    auto list = rank < min_plat_index ? sizes_ramp[rank] : sizes_plat[rank%min_plat_index];
+    for (int j = 0; j < list.size(); j++) {
+        // segments keep blocks in reversed order
+        // int i = list.size() - j - 1;
+        data->vars->global_offset.insert(data->vars->global_offset.begin(), offset);
+        data->vars->block_size.insert(data->vars->block_size.begin(), list[j]);
+        offset += (uint64_t)1<<list[j];
+    }
 
     uint64_t max_size = vars->block_size[0];
     mpz_t r; mpz_init_set_ui(r, 3);
