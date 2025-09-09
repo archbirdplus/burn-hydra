@@ -72,18 +72,13 @@ void setup_vars(data_t* data) {
 
     vars_t* vars = data->vars;
     *vars = {
-        .update (mpz_ptr) malloc (sizeof(mpz_t));
+        .update = (mpz_ptr) malloc (sizeof(mpz_t)),
         .p3 = {},
         .tmp = {},
         .stored = {},
-
         .block_size = {},
         .global_offset = {},
     };
-    vars->update = (mpz_ptr) malloc (sizeof(mpz_t));
-    vars->p3 = {};
-    vars->tmp = {};
-    vars->stored = {};
 
     std::vector<std::vector<uint64_t>> sizes = data->config->block_sizes_used;
     uint64_t offset = 0;
