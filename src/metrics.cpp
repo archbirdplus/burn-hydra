@@ -1,7 +1,6 @@
 #include <chrono>
 #include <cassert>
 #include <iostream>
-#include <format>
 
 #include "metrics.h"
 

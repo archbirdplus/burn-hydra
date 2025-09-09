@@ -2,6 +2,7 @@
 #define METRICS_H
 
 #include <chrono>
+#include <optional>
 #include "common.h"
 
 enum timer_class {

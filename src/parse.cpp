@@ -145,7 +145,9 @@ void test_parse_args() {
     vec = { NULL, (char*)"-c", (char*)"9-27,3-4/5-6", (char*)"-p", (char*)"-n", (char*)"420", (char*)"-i", (char*)"39", (char*)"-x", (char*)"5" };
     argv = &vec[0];
     optind = 0; // getopt is so jank
+    #ifdef optreset
     optreset = 1;
+    #endif // optreset
     parse_args(&problem, &config, 8, argv);
     assert(problem.initial == 3);
     assert(problem.iterations == 420);
