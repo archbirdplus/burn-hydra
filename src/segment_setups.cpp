@@ -132,7 +132,7 @@ void setup_vars(data_t* data) {
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
     metrics_t* metrics = (metrics_t*) malloc (sizeof(metrics_t));
     data_t* data = (data_t*) malloc (sizeof(data_t));
-    vars_t* vars = (vars_t*) malloc (sizeof(vars_t));
+    vars_t* vars = (vars_t*) calloc (1, sizeof(vars_t));
     init_metrics(metrics);
     timer_start(metrics, initializing);
     *data = {
