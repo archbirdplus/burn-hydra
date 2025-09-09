@@ -28,14 +28,16 @@ static struct option longopts[] = {
 
 void parse_config(config_t* config, char* optarg) {
     bool parsing_chain = false;
-    uint64_t block_max = 0;
+    assert(config->global_block_max == 0); // must be "zero"-initialized properly
     std::vector<std::vector<uint64_t>>* block_sizes_funnel = &config->block_sizes_funnel;
     std::vector<std::vector<uint64_t>>* block_sizes_chain = &config->block_sizes_chain;
+    assert(block_sizes_funnel->size() == 0);
+    assert(block_sizes_chain->size() == 0);
     std::vector<uint64_t> segment_sizes = {};
     char* ptr = optarg;
     char ch;
     bool done = false;
-    out: while (!done) {
+    while (!done) {
         ch = *ptr;
         switch (ch) {
         case '-':
@@ -68,7 +70,11 @@ void test_parse_config() {
     config_t config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .global_block_max = 0,
+        .prune_bits = 0,
+        .checkpoint_interval = 0,
     };
+
     parse_config(&config, (char*)"9-27,3-4/5-6");
     assert(std::vector<std::vector<uint64_t>>({{9, 27}, {3, 4}}) == config.block_sizes_funnel);
     assert(std::vector<std::vector<uint64_t>>({{5, 6}}) == config.block_sizes_chain);
@@ -77,11 +83,15 @@ void test_parse_config() {
 
 void parse_args(problem_t* problem, config_t* config, int argc, char** argv) {
     bool x_set = false;
+    bool config_set = false;
+    bool iterations_set = false;
+    bool checkpoint_set = false;
     int ch;
     while((ch = getopt_long_only(argc, argv, "c:pn:i:x:", longopts, NULL)) != -1) {
         switch (ch) {
         case 'c':
             parse_config(config, optarg);
+            config_set = true;
             break;
         case 'p':
             config->prune_bits = true;
@@ -91,12 +101,14 @@ void parse_args(problem_t* problem, config_t* config, int argc, char** argv) {
                 const int64_t iters = std::strtoll(optarg, nullptr, 10);
                 problem->iterations = iters;
             }
+            iterations_set = true;
             break;
         case 'i':
             {
                 const int64_t interval = std::strtoll(optarg, nullptr, 10);
                 config->checkpoint_interval = interval;
             }
+            checkpoint_set = true;
             break;
         case 'x':
             {
@@ -106,12 +118,21 @@ void parse_args(problem_t* problem, config_t* config, int argc, char** argv) {
             x_set = true;
             break;
         case 0:
-            printf("arg parse discovered null argument\n");
+            fprintf(stderr, "arg parse discovered null argument\n");
             break;
         }
     }
     if (!x_set) {
         problem->initial = 3;
+    }
+    if (!config_set) {
+        fprintf(stderr, "burn_hydra requires a configuration string.\n");
+    }
+    if (!iterations_set) {
+        fprintf(stderr, "Number of iterations was not specified.\n");
+    }
+    if (!checkpoint_set) {
+        config->checkpoint_interval = 0;
     }
 }
 
@@ -120,8 +141,10 @@ void test_parse_args() {
     config_t config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .global_block_max = 0,
+        .prune_bits = 0,
+        .checkpoint_interval = 0,
     };
-    // 8
     // These (char*) casts are doing a lot of heavy lifting. Hopefully
     // getopt doesn't modify them.
     std::vector<char*> vec = { NULL, (char*)"--config=9-27,3-4/5-6", (char*)"--prune", (char*)"--iterations", (char*)"420", (char*)"--checkpoint-interval", (char*)"39", (char*)"--x", (char*)"5" };
@@ -140,6 +163,9 @@ void test_parse_args() {
     config = {
         .block_sizes_funnel = {},
         .block_sizes_chain = {},
+        .global_block_max = 0,
+        .prune_bits = 0,
+        .checkpoint_interval = 0,
     };
     // apparently -c= does not work, but abbreviations in general do
     vec = { NULL, (char*)"-c", (char*)"9-27,3-4/5-6", (char*)"-p", (char*)"-n", (char*)"420", (char*)"-i", (char*)"39", (char*)"-x", (char*)"5" };
@@ -148,6 +174,7 @@ void test_parse_args() {
     #ifdef optreset
     optreset = 1;
     #endif // optreset
+    // skip over the -x
     parse_args(&problem, &config, 8, argv);
     assert(problem.initial == 3);
     assert(problem.iterations == 420);

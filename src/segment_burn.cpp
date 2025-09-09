@@ -28,12 +28,12 @@ void setup_vars(data_t* data) {
     uint64_t offset = 0;
     for (int i = 0; i < rank; i++) {
         std::vector<uint64_t> list = i < min_plat_index ? sizes_ramp[i] : sizes_plat[i%min_plat_index];
-        for (int j = 0; j < list.size(); j++) {
+        for (size_t j = 0; j < list.size(); j++) {
             offset += (uint64_t)1<<list[j];
         }
     }
     auto list = rank < min_plat_index ? sizes_ramp[rank] : sizes_plat[rank%min_plat_index];
-    for (int j = 0; j < list.size(); j++) {
+    for (size_t j = 0; j < list.size(); j++) {
         // segments keep blocks in reversed order
         // int i = list.size() - j - 1;
         data->vars->global_offset.insert(data->vars->global_offset.begin(), offset);
@@ -185,7 +185,6 @@ void segment_finalize(data_t* data) {
 // Updates x, representing the entire right side of the integer.
 void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
     const uint64_t end_size = data->vars->block_size[i];
-    int blocks_count = data->vars->block_size.size();
     assert(e >= end_size);
     std::vector<mpz_ptr> p3 = data->vars->p3;
     if (e == end_size) {
@@ -254,9 +253,7 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     mpz_ptr stored = data->vars->stored[i];
     mpz_ptr tmp = data->vars->tmp[i];
     std::vector<mpz_ptr> p3 = data->vars->p3;
-    // TODO: blocks_count
-    // TODO: does the last "block" need to update? is it not an update itself?
-    if (i == blocks.size() - 1) {
+    if (i == static_cast<int>(blocks.size()) - 1) {
         // Therefore we have the right size to pass to the next node.
         uint64_t t = 1<<e;
         // TODO: store this

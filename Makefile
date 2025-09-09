@@ -6,7 +6,7 @@ TEST_SOURCES=src/test.cpp
 HEADERS=include/common.h include/segment.h include/communicate.h include/metrics.h include/parse.h
 
 MPICC?=mpic++
-CFLAGS+=-std=c++17 -lgmp -lgmpxx -lstdc++ -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I include
+CFLAGS+=-std=c++17 -lgmp -lgmpxx -lstdc++ -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I include -Wall -Wextra
 
 burn_hydra: ${SOURCES} ${HEADERS} out
 	${MPICC} -g -O2 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS}

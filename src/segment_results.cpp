@@ -50,8 +50,8 @@ void print_signature(data_t* data, uint64_t base, uint64_t exp) {
     // Unfortunately mpz's do not like being allocated contiguously
     // (are they being reallocated?). Keeping a pointer to mpz pointers
     // prevents a heap corruption in practice.
-    mpz_ptr* buffer;
-    if (data->segment->world_rank == 0) {
+    mpz_ptr* buffer = nullptr;
+    if (data->segment->world_rank == root) {
         // prepare buffer
         buffer = (mpz_ptr*) malloc(data->segment->world_size * sizeof(mpz_ptr));
         for (int i = 0; i < data->segment->world_size; i++) {
@@ -60,9 +60,9 @@ void print_signature(data_t* data, uint64_t base, uint64_t exp) {
         }
     }
 
-    gather(data, res, buffer, 0);
+    gather(data, res, buffer, root);
 
-    if (data->segment->world_rank == 0) {
+    if (data->segment->world_rank == root) {
         // sum again
         mpz_set_ui(res, 0);
         for (int i = 0; i < data->segment->world_size; i++) {

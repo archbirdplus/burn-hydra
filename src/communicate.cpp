@@ -17,8 +17,7 @@ void send(metrics_t* metrics, int rank, int d, mpz_t x) {
     void* buf = malloc(count*size);
     size_t countp = 0;
     mpz_export(buf, &countp, 1, size, 0, 0, x);
-    assert(count - countp >= 0);
-    assert(count - countp <= 1);
+    assert(countp == 0 ? count == 1 : count == countp);
     timer_stop(metrics, d > 0 ? waiting_send_left_copy : waiting_send_right_copy);
     timer_start(metrics, d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
     // TODO: named tag constants
@@ -32,11 +31,11 @@ void recv(metrics_t* metrics, int rank, int d, mpz_t x) {
     timer_start(metrics, d > 0 ? waiting_recv_left : waiting_recv_right);
     timer_start(metrics, d > 0 ? waiting_recv_left_mpi : waiting_recv_right_mpi);
     MPI_Status status;
-    const int err1 = MPI_Probe(rank, 1, MPI_COMM_WORLD, &status);
+    MPI_Probe(rank, 1, MPI_COMM_WORLD, &status);
     int count;
     MPI_Get_count(&status, MPI_LONG, &count);
     void* buf = malloc(count * sizeof(long));
-    const int err2 = MPI_Recv(buf, count, MPI_LONG, rank, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(buf, count, MPI_LONG, rank, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     timer_stop(metrics, d > 0 ? waiting_recv_left_mpi : waiting_recv_right_mpi);
     timer_start(metrics, d > 0 ? waiting_recv_left_copy : waiting_recv_right_copy);
     const size_t size = 8;
@@ -81,7 +80,7 @@ void gather(data_t* data, mpz_t item, mpz_ptr* buffer, int root) {
     // timer
     int send_limb_count_int = static_cast<int>(send_limb_count);
     MPI_Gather(&send_limb_count_int, 1, MPI_INT, sizesbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
-    uint64_t* limbs;
+    uint64_t* limbs = nullptr;
     if (data->segment->world_rank == root) {
         displs[0] = 0;
         for (int i = 1; i < world_size; i++) {
