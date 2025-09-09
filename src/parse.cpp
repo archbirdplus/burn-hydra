@@ -151,7 +151,7 @@ void test_parse_args() {
     // getopt doesn't modify them.
     std::vector<char*> vec = { NULL, (char*)"--config=9-27,3-4/5-6", (char*)"--prune", (char*)"--iterations", (char*)"420", (char*)"--checkpoint-interval", (char*)"39", (char*)"--x", (char*)"5" };
     char** argv = &vec[0];
-    parse_args(&problem, &config, 8, argv);
+    parse_args(&problem, &config, 9, argv);
     assert(problem.initial == 5);
     assert(problem.iterations == 420);
 

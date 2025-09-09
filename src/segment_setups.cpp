@@ -71,6 +71,15 @@ void setup_vars(data_t* data) {
     seg->is_top_segment = rank == seg->world_size-1;
 
     vars_t* vars = data->vars;
+    *vars = {
+        .update (mpz_ptr) malloc (sizeof(mpz_t));
+        .p3 = {},
+        .tmp = {},
+        .stored = {},
+
+        .block_size = {},
+        .global_offset = {},
+    };
     vars->update = (mpz_ptr) malloc (sizeof(mpz_t));
     vars->p3 = {};
     vars->tmp = {};
