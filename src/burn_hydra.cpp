@@ -7,6 +7,7 @@
 
 #include "common.h"
 
+#include "parse.h"
 #include "segment.h"
 #include "metrics.h"
 
@@ -26,25 +27,23 @@ int main(int argc, char** argv) {
         world_rank = world_rank,
     };
 
-    int64_t max_iterations = (uint64_t)1<<21;
-
     problem_t problem;
     config_t config;
 
+    parse_args(&problem, &config, argc, argv);
+
     data_t* data = segment_init(&problem, &config, &segment);
 
-    int64_t checkpoint_interval = 1<<30;
-
-    // TODO: must be greater than the max size, or should have sub-steps
-    int64_t next_special = 20;
-    int64_t next_checkpoint = checkpoint_interval; // TODO: resolve dynamically
+    // TODO: maybe allow sub-step based specials?
+    int64_t next_special = config.global_block_max;
+    int64_t next_checkpoint = config.checkpoint_interval;
     int64_t iterations = 0;
-    while (iterations < max_iterations) {
+    while (iterations < problem.iterations) {
         if (iterations >= next_checkpoint) {
             assert(iterations == next_checkpoint);
             // TODO: do checkpoint
             std::cout << "TODO: checkpoint" << std::endl;
-            next_checkpoint += checkpoint_interval;
+            next_checkpoint += config.checkpoint_interval;
         }
         if (iterations >= 1<<next_special) {
             assert(iterations == 1<<next_special);
@@ -56,7 +55,12 @@ int main(int argc, char** argv) {
     }
     segment_finalize(data);
 
-    print_special_2exp(data, next_special);
+    if (iterations == 1<<next_special) {
+        print_special_2exp(data, next_special);
+    } else {
+        // not great but whatever, should confuse someone
+        print_special_2exp(data, -1);
+    }
 
     // print_segment_blocks(data);
     print_smallest_mod(data, (uint64_t)1<<32);
