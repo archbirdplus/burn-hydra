@@ -79,6 +79,7 @@ void setup_vars(data_t* data) {
         .block_size = {},
         .global_offset = {},
     };
+    mpz_init(vars->update);
 
     std::vector<std::vector<uint64_t>> sizes = data->config->block_sizes_used;
     uint64_t offset = 0;
