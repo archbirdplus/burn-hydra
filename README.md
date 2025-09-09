@@ -3,7 +3,7 @@
 
 Burn-Hydra is a program that attempts to compute extremely large iterations of the [Hydra map](https://wiki.bbchallenge.org/wiki/Hydra_function). It has the capability of distributing the large integer computations over multiple processors to get around limitations of single node storage and GMP integer sizes.
 
-The present goal is to compute the `H^114817814715809(10)`, which has the potential to resolve the halting problem for the Turing machine [`1RB1RE_1LC1LD_---1LA_1LB1LE_0RF0RA_1LD1RF`](https://wiki.bbchallenge.org/wiki/1RB1RE_1LC1LD_---1LA_1LB1LE_0RF0RA_1LD1RF). This will require at least 4 TB of storage, not accounting for temporary or auxiliary variables.
+The present goal is to compute the `H^114817814715809(10)`, which has the potential to resolve the halting status of the Turing machine [`1RB1RE_1LC1LD_---1LA_1LB1LE_0RF0RA_1LD1RF`](https://wiki.bbchallenge.org/wiki/1RB1RE_1LC1LD_---1LA_1LB1LE_0RF0RA_1LD1RF). This will require at least 4 TB of storage, not accounting for temporary or auxiliary variables.
 
 ## Building
 
