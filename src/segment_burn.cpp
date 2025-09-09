@@ -17,7 +17,7 @@ void setup_vars(data_t* data) {
     seg->is_top_segment = rank == seg->world_size-1;
 
     vars_t* vars = data->vars;
-    vars->update = (mpz_ptr) malloc (sizeof(mpz_t)); // TODO: coalesce this into another tmp
+    vars->update = (mpz_ptr) malloc (sizeof(mpz_t));
     vars->p3 = {};
     vars->tmp = {};
     vars->stored = {};
@@ -74,7 +74,6 @@ void setup_vars(data_t* data) {
 }
 
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
-    // TODO: account for config
     metrics_t* metrics = (metrics_t*) malloc (sizeof(metrics_t));
     data_t* data = (data_t*) malloc (sizeof(data_t));
     vars_t* vars = (vars_t*) malloc (sizeof(vars_t));
@@ -149,7 +148,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
         // mpz_set(update, output);
         mpz_mul_2exp(update, output, 1<<l);
     }
-    mpz_clear(output); // TODO: again, remove alloc
+    mpz_clear(output);
 
     if (!dont_communicate_left) {
         receiveLeft(data, update);
@@ -164,7 +163,6 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     // compensating for small shifts is not necessary as long
     // as they remain in sync
     // however right-shifts have to be adjusted for being smaller?
-    // TODO: let funnel soak up and coalesce small shifts
 
     return 1<<e;
 }
@@ -188,11 +186,6 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
     assert(e >= end_size);
     std::vector<mpz_ptr> p3 = data->vars->p3;
     if (e == end_size) {
-        // end of funnel, go to next mem block
-        // it will return the integer to pass back up
-        // TODO: this bit of the integer hasn't been updated yet,
-        // and the recursive burn still has to return its carry
-        // calling convention may differ
         // x *= p3t
         // return top(x) + recv_carry(tail(x))
         mpz_mul(x, x, p3[e]);
@@ -231,21 +224,24 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
 }
 
 // Recursive burn moves depth-first from left to right,
-// possibly with some branching. Each i represents one _block
-// of memory_, regardless of step size. Steps size adapts (by
-// halving) so that it doesn't overflow the memory to the right.
+//  possibly with some branching. Each i represents one block
+//  of memory, regardless of step size. Steps size adapts (by
+//  halving) so that it doesn't overflow the memory to the right.
 // Should work with arbitrary memory blocks, including:
-//  1) several same-sized ones, without fully recombining them
-//  2) non-monotinic non-decreasing sizes, adjusting steps as needed (not necssarily coalescing optimally)
-//  3) zero blocks, simply passing data through [maybe not]
-// TODO: currently data is not properly separated? all comes from x
-// Calling convention: x is passed undercarry, then the carry is returned
+//  1) several same-sized blocks
+//  2) non-decreasing sizes, adjusting steps as needed (not necssarily coalescing optimally)
+//  3) no blocks at all, simply passing data through [suspect]
+// Calling convention: `add` is passed undercarry, then the carry is
+//  returned through `rop`.
 // Note that carry must be added after the current block is updated.
+// This method is a serial approximation of the parallel concept
+//  of "multiply each block, then add the overflows to the left and right":
 // 1) Accept undercarry parameter
 // 2) Perform own computation
 // 3) Add undercarry
 // 4) Compute and return overcarry
-// ... could we rearrange it to add first while cache is hot?
+// Some carries inevitably have to be stored, but it may be possible to
+// delay the storage of the big ones.
 void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     segment_t* segment = data->segment;
     std::vector<uint64_t> blocks = data->vars->block_size;
@@ -260,8 +256,6 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
         mpz_t ret; mpz_init(ret);
         if (segment->is_base_segment) {
             // Time to iterate basecase.
-            // TODO: addition could be extracted out;
-            // somehow addition is already first...
             // This function handles everything it needs already.
             // TODO: basecase_burn handles way too much, why, how?
             timer_stop(data->metrics, grinding_chain);
@@ -273,13 +267,11 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             timer_start(data->metrics, grinding_chain);
             return;
         } else {
+            // Otherwise continue passing data forth.
             mpz_mul(stored, stored, p3[e]);
             mpz_fdiv_r_2exp(tmp, stored, t);
             mpz_fdiv_q_2exp(stored, stored, t);
             timer_stop(data->metrics, grinding_chain);
-            // Otherwise continue passing data forth.
-            // TODO: ideally recv/send the buffer than afterwards format it...
-            // check perf though
             receiveRight(data, ret);
             // gmp_printf("%d  received right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
             sendRight(data, tmp);
@@ -301,7 +293,7 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     mpz_add(stored, stored, add);
     mpz_fdiv_q_2exp(tmp, stored, 1<<l);
     mpz_fdiv_r_2exp(stored, stored, 1<<l);
-    mpz_set(rop, tmp); // TODO: ???
+    mpz_set(rop, tmp); // TODO: work with rop as scratch?
 }
 
 void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
