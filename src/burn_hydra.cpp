@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 
     dump_metrics(data->metrics);
 
-    std::cout << "Done." << std::endl;
+    std::cout << "Rank " << segment.world_rank << " done." << std::endl;
 
     MPI_Finalize();
 }
