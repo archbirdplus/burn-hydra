@@ -7,12 +7,24 @@
 #include "segment.h"
 
 int main() {
+    const start_time_t setup_start = nanos();
+    const uint64_t power = 20;
+    basecase_table_t* table = (basecase_table_t*) malloc(((uint64_t)1<<power) * sizeof(basecase_table_t));
+    init_table(table, power);
+    const double setup_length = seconds(nanos()-setup_start);
+    // Not too long since it's only ~2^20 times 20 multiplications, and
+    // 2^20 for the benchmark means 256 times that.
+    // Generally around 10 milliseconds on my machine, so not significant.
+    std::cout << "Spent " << setup_length << " s on setting up basecase tables." << std::endl;
+
     mpz_t stored; mpz_init(stored);
     mpz_t tmp; mpz_init(tmp);
+
     vars_t vars = {
         .stored = {stored},
         .tmp = {tmp},
         .block_size = {8},
+        .basecase_table = table,
     };
     data_t data;
     data.vars = &vars;
@@ -36,7 +48,7 @@ int main() {
             mpz_fdiv_q_2exp(add, out, e); // just truncate it to pass back
         }
         const double time = seconds(nanos()-start);
-        std::cout << "  basecase 2^"<<p<<" iterations of e="<<e<<" took " << time << " s." << std::endl;
+        gmp_printf("  basecase 2^%llu iterations of e=%llu took %f s. (signature: %Zd)\n", p, e, time, out);
         times.push_back(time);
     }
     double mean = 0;

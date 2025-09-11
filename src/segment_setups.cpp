@@ -1,6 +1,7 @@
 #include <gmp.h>
 #include <cstdint>
 #include <iostream>
+#include <cassert>
 #include <vector>
 
 #include "segment.h"
@@ -61,6 +62,19 @@ void constrain_config(data_t* data) {
     if (any_error) {
         std::cerr << "Constraints not met." << std::endl;
         exit(1);
+    }
+}
+
+void init_table(basecase_table_t* table, uint64_t power) {
+    uint64_t N = (uint64_t)1<<power;
+    basecase_table_t max = -1; // assume it's unsigned
+    for (uint64_t i = 0; i < N; i++) {
+        uint64_t n = i;
+        for (uint64_t j = 0; j < power; j++) {
+            n = n*3/2;
+        }
+        assert(n < max);
+        table[i] = static_cast<basecase_table_t>(n);
     }
 }
 
