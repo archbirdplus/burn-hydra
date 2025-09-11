@@ -8,7 +8,7 @@
 #include "common.h"
 #include "metrics.h"
 
-using basecase_table_t = uint64_t;
+using basecase_table_t = uint32_t;
 
 typedef struct vars {
     mpz_ptr update;
@@ -16,6 +16,8 @@ typedef struct vars {
     std::vector<mpz_ptr> tmp;
     std::vector<mpz_ptr> stored;
     basecase_table_t* basecase_table;
+    uint64_t p3base;
+    uint64_t table_bits;
 
     std::vector<uint64_t> block_size; // from left to right, including input (stored) and output (not stored) sizes; log length
     std::vector<uint64_t> global_offset; // number of bits from the basecase
@@ -34,8 +36,8 @@ int segment_burn(data_t*, int64_t);
 void segment_finalize(data_t*);
 
 // internal objects exposed for benchmarking
-void init_table(basecase_table_t* table, uint64_t power);
-void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i);
+void init_table(vars_t* vars, uint64_t power);
+void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int block);
 
 void print_segment_blocks(data_t*);
 void print_smallest_mod(data_t*, uint64_t);

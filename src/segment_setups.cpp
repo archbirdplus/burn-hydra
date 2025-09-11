@@ -65,7 +65,12 @@ void constrain_config(data_t* data) {
     }
 }
 
-void init_table(basecase_table_t* table, uint64_t power) {
+void init_table(vars_t* vars, uint64_t power) {
+    uint64_t p3base = 1;
+    for (uint64_t i = 0; i < power; i++) { p3base *= 3; }
+    vars->p3base = p3base;
+    vars->table_bits = power;
+    basecase_table_t* table = vars->basecase_table;
     uint64_t N = (uint64_t)1<<power;
     basecase_table_t max = -1; // assume it's unsigned
     for (uint64_t i = 0; i < N; i++) {
@@ -84,16 +89,23 @@ void setup_vars(data_t* data) {
     seg->is_base_segment = rank == 0;
     seg->is_top_segment = rank == seg->world_size-1;
 
+    const uint64_t table_bits = 17; // just trust this lol
+
     vars_t* vars = data->vars;
     *vars = {
         .update = (mpz_ptr) malloc (sizeof(mpz_t)),
         .p3 = {},
         .tmp = {},
         .stored = {},
+        .basecase_table = (basecase_table_t*) malloc(((uint64_t)1<<table_bits) * sizeof(basecase_table_t)),
+        .p3base = 0,
+        .table_bits = 0,
+
         .block_size = {},
         .global_offset = {},
     };
     mpz_init(vars->update);
+    init_table(vars, table_bits);
 
     std::vector<std::vector<uint64_t>> sizes = data->config->block_sizes_used;
     uint64_t offset = 0;

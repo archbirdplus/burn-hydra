@@ -214,17 +214,30 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
     mpz_set(rop, tmp); // TODO: work with rop as scratch?
 }
 
-void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
+void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int block) {
     // It seems like the vector contains the mpz structs themselves.
     // Thus dereferencing it takes a copy of size and limb pointer,
     // which promptly get overridden when an operation is made, and the
     // old struct is in invalid memory or something.
-    mpz_ptr stored = data->vars->stored[i];
-    mpz_ptr tmp = data->vars->tmp[i];
-    uint64_t l = data->vars->block_size[i];
+    mpz_ptr stored = data->vars->stored[block];
+    mpz_ptr tmp = data->vars->tmp[block];
+    uint64_t l = data->vars->block_size[block];
+    basecase_table_t* table = data->vars->basecase_table;
+    uint64_t bits = data->vars->table_bits;
+    uint64_t base = (uint64_t)1<<bits;
+    uint64_t mask = base-1;
+    uint64_t p3 = data->vars->p3base;
     uint64_t t = 1<<e;
 
-    for (uint64_t i = 0; i < t; i++) {
+    uint64_t i = 0;
+    for (; i < t - bits; i += bits) {
+        uint64_t index = mpz_get_ui(stored) & mask;
+        mpz_fdiv_q_2exp(tmp, stored, bits);
+        uint64_t mem = static_cast<uint64_t>(table[index]);
+        mpz_mul_ui(stored, tmp, p3);
+        mpz_add_ui(stored, stored, mem);
+    }
+    for (; i < t; i += 1) {
         mpz_fdiv_q_2exp(tmp, stored, 1);
         mpz_add(stored, stored, tmp);
     }
