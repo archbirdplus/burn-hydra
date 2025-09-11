@@ -21,6 +21,7 @@ int main() {
     mpz_t out; mpz_init(out);
 
     uint64_t e = 8;
+    uint64_t p = 20;
 
     std::vector<double> times = {};
     int max_attempts = 3;
@@ -29,13 +30,13 @@ int main() {
         mpz_set_ui(out, 0);
         mpz_set_ui(stored, 0);
         const start_time_t start = nanos();
-        for (int iter = 0; iter < (1<<20); iter++) {
+        for (int iter = 0; iter < (1<<p); iter++) {
             basecase_burn(&data, out, add, e, 0);
             mpz_mul_ui(out, out, 7); // scramble it a little
             mpz_fdiv_q_2exp(add, out, e); // just truncate it to pass back
         }
         const double time = seconds(nanos()-start);
-        std::cout << "  basecase 2^20 took " << time << " s." << std::endl;
+        std::cout << "  basecase 2^"<<p<<" iterations of e="<<e<<" took " << time << " s." << std::endl;
         times.push_back(time);
     }
     double mean = 0;
