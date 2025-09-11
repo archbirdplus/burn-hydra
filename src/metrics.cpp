@@ -30,6 +30,15 @@ const char* counter_class_names[] = {
     "uh oh",
 };
 
+start_time_t nanos() {
+    return hydra_clock::now();
+}
+
+double seconds(std::chrono::nanoseconds time) {
+    std::chrono::duration<double> seconds = time;
+    return seconds.count();
+}
+
 void init_metrics(metrics_t* metrics) {
     // for some reason malloc here is _really_ bad, and puts
     // a brk instead of this whole function specifically in -O2

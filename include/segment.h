@@ -30,6 +30,9 @@ data_t* segment_init(problem_t*, config_t*, segment_t*);
 int segment_burn(data_t*, int64_t);
 void segment_finalize(data_t*);
 
+// internal objects for benchmarking
+void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i);
+
 void print_segment_blocks(data_t*);
 void print_smallest_mod(data_t*, uint64_t);
 void print_signature(data_t*, uint64_t, uint64_t);
