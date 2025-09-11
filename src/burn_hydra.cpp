@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
         print_special_2exp(data, -1);
     }
 
-    dump_metrics(data->metrics);
+    dump_metrics(data->metrics, segment.world_rank);
 
     std::cout << "Rank " << segment.world_rank << " done." << std::endl;
 

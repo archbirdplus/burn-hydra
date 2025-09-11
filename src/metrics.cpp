@@ -1,6 +1,9 @@
 #include <chrono>
+#include <vector>
+#include <string>
 #include <cassert>
 #include <iostream>
+#include <fstream>
 
 #include "metrics.h"
 
@@ -46,6 +49,19 @@ void init_metrics(metrics_t* metrics) {
         metrics->timers.total[i] = std::chrono::nanoseconds::zero();
         metrics->timers.last_start[i] = std::nullopt;
     }
+    for (int i = 0; i < _timer_classes; i++) {
+        metrics->timers.intervals[i] = std::nullopt;
+    }
+    metrics->timers.intervals[initializing] = std::vector<start_stop_t>();
+    metrics->timers.intervals[waiting_send_left] = std::vector<start_stop_t>();
+    metrics->timers.intervals[waiting_recv_left] = std::vector<start_stop_t>();
+    metrics->timers.intervals[waiting_send_right] = std::vector<start_stop_t>();
+    metrics->timers.intervals[waiting_recv_right] = std::vector<start_stop_t>();
+    metrics->timers.intervals[grinding_basecase] = std::vector<start_stop_t>();
+    metrics->timers.intervals[grinding_chain] = std::vector<start_stop_t>();
+    if (metrics->timers.intervals[initializing] == std::nullopt) {
+        return;
+    }
     // the rest are zero-initialized
 }
 
@@ -60,12 +76,16 @@ void timer_start(metrics_t* metrics, timer_class t) {
 
 void timer_stop(metrics_t* metrics, timer_class t) {
     if (auto start = metrics->timers.last_start[t]) {
-        const auto delta = hydra_clock::now() - *start;
+        const auto stop = hydra_clock::now();
+        const auto delta = stop - *start;
         if (delta < std::chrono::nanoseconds::zero()) {
             std::cout << "ouch: Experienced time travel: " << delta.count() << " ns time elapased." << std::endl;
         }
         metrics->timers.total[t] += delta;
         metrics->timers.last_start[t] = std::nullopt;
+        if (metrics->timers.intervals[t] != std::nullopt) {
+            metrics->timers.intervals[t].value().push_back({*start, stop});
+        }
     } else {
         std::cout << "ouch: Timer was stopped twice." << std::endl;
         assert(false);
@@ -76,16 +96,43 @@ void counter_count(metrics_t* metrics, counter_class t) {
     metrics->counters.counter[t] += 1;
 }
 
-void dump_metrics(metrics_t* metrics) {
+void dump_metrics(metrics_t* metrics, int rank) {
+    std::string filename {"rank"};
+    filename.append(std::to_string(rank));
+    filename.append(".json");
+    std::fstream f {filename, std::ios::out};
     std::cout << "Some metrics were tracked:" << std::endl;
-    for (int i = 0; i < _timer_classes; i++) {
-        const auto time = metrics->timers.total[i];
+    for (int t = 0; t < _timer_classes; t++) {
+        const auto time = metrics->timers.total[t];
         std::chrono::duration<double> seconds = time;
-        std::cout << "\t" << seconds.count() << " s spent " << timer_class_names[i] << "." << std::endl;
+        std::cout << "\t" << seconds.count() << " s spent " << timer_class_names[t] << "." << std::endl;
     }
     for (int i = 0; i < _counter_classes; i++) {
         const auto counts = metrics->counters.counter[i];
         std::cout << "\t" << counts << " " << counter_class_names[i] << "." << std::endl;
     }
+    // do a bit of json
+    // { "timer_class_a": [[start, stop], [start, stop]...], ... }
+    if (metrics->timers.intervals[initializing] == std::nullopt) {
+        std::cout << "init timer is nullopt, skipping file write" << std::endl;
+        return;
+    }
+    std::cout << "Dumping json timer intervals." << std::endl;
+    const start_time_t first_start = (*metrics->timers.intervals[initializing])[0].start;
+    f << "\"rank " << rank << "\": {";
+    for (int t = 0; t < _timer_classes; t++) {
+        if (std::optional<std::vector<start_stop_t>> intervals = metrics->timers.intervals[t]) {
+            f << "\"" << timer_class_names[t] << "\": [";
+            const size_t count = intervals->size();
+            for (size_t i = 0; i < count; i++) {
+                const double start = seconds((*intervals)[i].start - first_start);
+                const double stop = seconds((*intervals)[i].stop - first_start);
+                f << "[" << start << "," << stop << "],";
+            }
+            f << "],";
+        }
+    }
+    f << "},";
+    f.flush();
 }
 

@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <optional>
+#include <vector>
 #include "common.h"
 
 enum timer_class {
@@ -28,9 +29,15 @@ enum timer_class {
 typedef std::chrono::high_resolution_clock hydra_clock;
 typedef std::chrono::time_point<hydra_clock> start_time_t;
 
+typedef struct start_stop_pair {
+    start_time_t start;
+    start_time_t stop;
+} start_stop_t;
+
 typedef struct timers {
     std::chrono::nanoseconds total[_timer_classes];
     std::optional<start_time_t> last_start[_timer_classes];
+    std::optional<std::vector<start_stop_t>> intervals[_timer_classes];
 } timers_t;
 
 enum counter_class {
@@ -59,7 +66,7 @@ void timer_stop(metrics_t*, timer_class);
 
 void counter_count(metrics_t*, counter_class);
 
-void dump_metrics(metrics_t*);
+void dump_metrics(metrics_t*, int);
 
 #endif // METRICS_H
 
