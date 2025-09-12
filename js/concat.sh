@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cat header $(find ../trace -name "rank[0-9].json") footer > rankall.json
+cat header $(find ../trace -name "rank[0-9].json" | sort) footer > rankall.json
 
