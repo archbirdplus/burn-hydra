@@ -52,6 +52,7 @@ void init_metrics(metrics_t* metrics) {
     for (int i = 0; i < _timer_classes; i++) {
         metrics->timers.intervals[i] = std::nullopt;
     }
+    #ifndef NO_PLOT_LOGS
     metrics->timers.intervals[initializing] = std::vector<start_stop_t>();
     metrics->timers.intervals[waiting_send_left] = std::vector<start_stop_t>();
     metrics->timers.intervals[waiting_recv_left] = std::vector<start_stop_t>();
@@ -59,9 +60,7 @@ void init_metrics(metrics_t* metrics) {
     metrics->timers.intervals[waiting_recv_right] = std::vector<start_stop_t>();
     metrics->timers.intervals[grinding_basecase] = std::vector<start_stop_t>();
     metrics->timers.intervals[grinding_chain] = std::vector<start_stop_t>();
-    if (metrics->timers.intervals[initializing] == std::nullopt) {
-        return;
-    }
+    #endif
     // the rest are zero-initialized
 }
 
@@ -83,9 +82,11 @@ void timer_stop(metrics_t* metrics, timer_class t) {
         }
         metrics->timers.total[t] += delta;
         metrics->timers.last_start[t] = std::nullopt;
+        #ifndef NO_PLOT_LOGS
         if (metrics->timers.intervals[t] != std::nullopt) {
             metrics->timers.intervals[t].value().push_back({*start, stop});
         }
+        #endif
     } else {
         std::cout << "ouch: Timer was stopped twice." << std::endl;
         assert(false);
@@ -111,6 +112,7 @@ void dump_metrics(metrics_t* metrics, int rank) {
         const auto counts = metrics->counters.counter[i];
         std::cout << "\t" << counts << " " << counter_class_names[i] << "." << std::endl;
     }
+    #ifndef NO_PLOT_LOGS
     // do a bit of json
     // { "timer_class_a": [[start, stop], [start, stop]...], ... }
     if (metrics->timers.intervals[initializing] == std::nullopt) {
@@ -119,20 +121,30 @@ void dump_metrics(metrics_t* metrics, int rank) {
     }
     std::cout << "Dumping json timer intervals." << std::endl;
     const start_time_t first_start = (*metrics->timers.intervals[initializing])[0].start;
+    if (rank > 0) {
+        f << ",";
+    }
     f << "\"rank " << rank << "\": {";
     for (int t = 0; t < _timer_classes; t++) {
         if (std::optional<std::vector<start_stop_t>> intervals = metrics->timers.intervals[t]) {
+            if (t > 0) {
+                f << ",";
+            }
             f << "\"" << timer_class_names[t] << "\": [";
             const size_t count = intervals->size();
             for (size_t i = 0; i < count; i++) {
+                if (i > 0) {
+                    f << ",";
+                }
                 const double start = seconds((*intervals)[i].start - first_start);
                 const double stop = seconds((*intervals)[i].stop - first_start);
-                f << "[" << start << "," << stop << "],";
+                f << "[" << start << "," << stop << "]";
             }
-            f << "],";
+            f << "]";
         }
     }
-    f << "},";
+    f << "}";
     f.flush();
+    #endif
 }
 
