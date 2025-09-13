@@ -9,16 +9,30 @@ HEADERS=include/common.h include/segment.h include/communicate.h include/metrics
 MPICC?=mpic++
 CFLAGS+=-std=c++17 -lgmp -lstdc++ -I/opt/homebrew/Cellar/gmp/6.3.0/include -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I include -Wall -Wextra
 
-burn_hydra: ${SOURCES} ${HEADERS} out
+burn_hydra: ${SOURCES} ${HEADERS} ${BURN_SOURCES} out
 	${MPICC} -g -O2 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS}
 
-bench: ${TESTS} ${SOURCES} ${HEADERS} testdir
+bench: bench_basecase bench_smallchain
+
+# a benchmark heavily bottlenecked by medium-integer performance
+bench_smallchain: ${TESTS} ${SOURCES} ${HEADERS} ${BURN_SOURCES} testdir
+	${MPICC} -g -O2 -o testdir/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS} -DNO_PLOT_LOGS
+	echo "Benchmark: oversized funnel multiplication"
+	for i in $$(seq 3); do \
+		(time (mpirun -n 2 -- testdir/burn_hydra -x 8 -n 67108864 -c 8-18,18-26 \
+			| grep 31848934250314775156605172273469025153 | grep 2246674935863200705435021934434735832940657095564955971137014 \
+			|| echo "Incorrect signature.") ) 2>&1 | grep real; \
+	done
+
+# a test consisting only of the lowest few bits
+bench_basecase: ${TESTS} ${SOURCES} ${HEADERS} ${BENCH_SOURCES} testdir
 	${MPICC} -g -O2 -o testdir/bench ${BENCH_SOURCES} ${SOURCES} ${CFLAGS}
+	echo "Benchmark: just basecase"
 	./testdir/bench
 
 test: test.test
 
-test.test: ${TESTS} ${SOURCES} ${HEADERS} testdir
+test.test: ${TESTS} ${SOURCES} ${HEADERS} ${TEST_SOURCES} testdir
 	${MPICC} -g -O0 -o testdir/test ${TEST_SOURCES} ${SOURCES} ${CFLAGS}
 	./testdir/test
 
