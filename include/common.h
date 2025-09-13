@@ -4,8 +4,8 @@
 
 // #include <mpi.h>
 // #include <gmp.h>
-// #include <stdio.h>
-// #include <algorithm>
+// #include <flint/flint.h>
+// #include <flint/fmpz.h>
 #include <vector>
 #include <cstdint>
 

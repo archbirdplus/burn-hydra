@@ -1,4 +1,5 @@
 #include <gmp.h>
+#include <flint/fmpz.h>
 #include <cstdlib>
 #include <cassert>
 #include <cstdint>
@@ -25,9 +26,9 @@ uint64_t nearest2pow(uint64_t x) {
 }
 
 int segment_burn(data_t*, int);
-void recursive_burn(data_t*, mpz_t, mpz_t, uint64_t, int);
-void funnel_until(data_t*, mpz_t, uint64_t, int);
-void basecase_burn(data_t*, mpz_t, mpz_t, uint64_t, int);
+void recursive_burn(data_t*, fmpz_t, fmpz_t, uint64_t, int);
+void funnel_until(data_t*, fmpz_t, uint64_t, int);
+void basecase_burn(data_t*, fmpz_t, fmpz_t, uint64_t, int);
 
 // Returns number of iterations actually completed.
 int segment_burn(data_t* data, int64_t max_iterations) {
@@ -49,9 +50,9 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     // Currently, just a crude approximation so that we use finite space.
     bool dont_communicate_left = segment->is_top_segment;
 
-    mpz_ptr update = vars->update;
+    fmpz* update = &vars->update;
     // TODO: again, rop and add parameters could be merged
-    mpz_t output; mpz_init(output);
+    fmpz_t output; fmpz_init(output);
     // Note that this timer is paused at the leaf cases.
     timer_start(data->metrics, grinding_chain);
     recursive_burn(data, output, update, e, 0);
@@ -59,24 +60,22 @@ int segment_burn(data_t* data, int64_t max_iterations) {
 
     // lower node sends first (to cleanup memory for lower levels (!?))
     if (!dont_communicate_left) {
-        // gmp_printf("%d      sent left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
+        // gmp_printf("%d      sent left: %d bits\n", segment->world_rank, fmpz_sizeinbase(output, 2));
         sendLeft(data, output);
     } else {
-        // assert(mpz_sgn(output) == 0);
-        // mpz_set(update, output);
-        mpz_mul_2exp(update, output, 1<<l);
+        fmpz_mul_2exp(update, output, 1<<l);
     }
-    mpz_clear(output);
+    fmpz_clear(output);
 
     if (!dont_communicate_left) {
         receiveLeft(data, update);
-        // gmp_printf("%d  received left: %d bits\n", segment->world_rank, mpz_sizeinbase(output, 2));
+        // gmp_printf("%d  received left: %d bits\n", segment->world_rank, fmpz_sizeinbase(output, 2));
     }
 
     // Problem... why is this now happening _before_ the computation,
     // while the recursive-burn's addition happens after?
-    mpz_add(data->vars->stored[0], data->vars->stored[0], update);
-    mpz_set_ui(update, 0);
+    fmpz_add(&data->vars->stored[0], &data->vars->stored[0], update);
+    fmpz_set_ui(update, 0);
 
     // compensating for small shifts is not necessary as long
     // as they remain in sync
@@ -89,54 +88,54 @@ void segment_finalize(data_t* data) {
     // If (when) the segment didn't send its update, it needs
     // to re-inflate it and add it onto itself.
     const uint64_t l = data->vars->block_size[0]; // log size
-    mpz_ptr update = data->vars->update;
-    mpz_ptr stored = data->vars->stored[0];
+    fmpz* update = &data->vars->update;
+    fmpz* stored = &data->vars->stored[0];
     if (!data->segment->is_top_segment) {
-        mpz_mul_2exp(update, update, 1<<l);
+        fmpz_mul_2exp(update, update, 1<<l);
     }
-    mpz_add(stored, stored, update);
+    fmpz_add(stored, stored, update);
 }
 
 // Funnel until next block, denoted by index i
 // Updates x, representing the entire right side of the integer.
-void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
+void funnel_until(data_t* data, fmpz_t x, uint64_t e, int i) {
     const uint64_t end_size = data->vars->block_size[i];
     assert(e >= end_size);
-    std::vector<mpz_ptr> p3 = data->vars->p3;
+    std::vector<fmpz> p3 = data->vars->p3;
     if (e == end_size) {
         // x *= p3t
         // return top(x) + recv_carry(tail(x))
-        mpz_mul(x, x, p3[e]);
-        mpz_t tmp2; mpz_init(tmp2);
-        mpz_fdiv_r_2exp(tmp2, x, 1<<e);
-        mpz_fdiv_q_2exp(x, x, 1<<e);
-        mpz_t res; mpz_init(res);
+        fmpz_mul(x, x, &p3[e]);
+        fmpz_t tmp2; fmpz_init(tmp2);
+        fmpz_fdiv_r_2exp(tmp2, x, 1<<e);
+        fmpz_fdiv_q_2exp(x, x, 1<<e);
+        fmpz_t res; fmpz_init(res);
         recursive_burn(data, res, tmp2, e, i);
-        mpz_clear(tmp2);
+        fmpz_clear(tmp2);
         // TODO: ideally no allocate or deallocate of mpz_t
         // Technically, we could pass the same mpz into both...
         // they're never needed at the same time
-        mpz_add(x, x, res);
-        mpz_clear(res);
+        fmpz_add(x, x, res);
+        fmpz_clear(res);
     } else {
         // e > end_size
         // TODO: preallocate this
-        mpz_t next; mpz_init(next);
+        fmpz_t next; fmpz_init(next);
         // high, one low per stack
         // high is n/2, low is actually n*1.6
         uint64_t t = 1<<(e-1);
-        mpz_set(next, x);
+        fmpz_set(next, x);
         for (int j = 0; j < 2; j++) {
-            mpz_fdiv_r_2exp(next, x, t);
-            mpz_fdiv_q_2exp(x, x, t);
+            fmpz_fdiv_r_2exp(next, x, t);
+            fmpz_fdiv_q_2exp(x, x, t);
             // most of the size thus remains in x
             // I guess they are both in cache though
             funnel_until(data, next, e-1, i);
             // x re-inflates after the longer process
-            mpz_mul(x, x, p3[e-1]);
-            mpz_add(x, x, next);
+            fmpz_mul(x, x, &p3[e-1]);
+            fmpz_add(x, x, next);
         }
-        mpz_clear(next);
+        fmpz_clear(next);
     }
     // Return is handled by updating x.
 }
@@ -160,18 +159,18 @@ void funnel_until(data_t* data, mpz_t x, uint64_t e, int i) {
 // 4) Compute and return overcarry
 // Some carries inevitably have to be stored, but it may be possible to
 // delay the storage of the big ones.
-void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
+void recursive_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int i) {
     segment_t* segment = data->segment;
     std::vector<uint64_t> blocks = data->vars->block_size;
     uint64_t l = blocks[i]; // log size of input/self
-    mpz_ptr stored = data->vars->stored[i];
-    mpz_ptr tmp = data->vars->tmp[i];
-    std::vector<mpz_ptr> p3 = data->vars->p3;
+    fmpz* stored = &data->vars->stored[i];
+    fmpz* tmp = &data->vars->tmp[i];
+    std::vector<fmpz> p3 = data->vars->p3;
     if (i == static_cast<int>(blocks.size()) - 1) {
         // Therefore we have the right size to pass to the next node.
         uint64_t t = 1<<e;
         // TODO: store this
-        mpz_t ret; mpz_init(ret);
+        fmpz_t ret; fmpz_init(ret);
         if (segment->is_base_segment) {
             // Time to iterate basecase.
             // This function handles everything it needs already.
@@ -179,48 +178,45 @@ void recursive_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int i) {
             timer_stop(data->metrics, grinding_chain);
             timer_start(data->metrics, grinding_basecase);
             basecase_burn(data, ret, add, e, i);
-            mpz_set(rop, ret);
-            mpz_clear(ret);
+            fmpz_set(rop, ret);
+            fmpz_clear(ret);
             timer_stop(data->metrics, grinding_basecase);
             timer_start(data->metrics, grinding_chain);
             return;
         } else {
             // Otherwise continue passing data forth.
-            mpz_mul(stored, stored, p3[e]);
-            mpz_fdiv_r_2exp(tmp, stored, t);
-            mpz_fdiv_q_2exp(stored, stored, t);
+            fmpz_mul(stored, stored, &p3[e]);
+            fmpz_fdiv_r_2exp(tmp, stored, t);
+            fmpz_fdiv_q_2exp(stored, stored, t);
             timer_stop(data->metrics, grinding_chain);
             receiveRight(data, ret);
-            // gmp_printf("%d  received right: %d bits\n", segment->world_rank, mpz_sizeinbase(ret, 2));
+            // gmp_printf("%d  received right: %d bits\n", segment->world_rank, fmpz_sizeinbase(ret, 2));
             sendRight(data, tmp);
-            // gmp_printf("%d      sent right: %d bits\n", segment->world_rank, mpz_sizeinbase(tmp, 2));
+            // gmp_printf("%d      sent right: %d bits\n", segment->world_rank, fmpz_sizeinbase(tmp, 2));
             counter_count(data->metrics, messages_received_right);
-            if (mpz_sgn(ret) != 0) {
+            if (fmpz_sgn(ret) != 0) {
                 counter_count(data->metrics, messages_received_right_nonempty);
             }
             timer_start(data->metrics, grinding_chain);
-            mpz_add(stored, stored, ret);
+            fmpz_add(stored, stored, ret);
         }
-        mpz_clear(ret);
+        fmpz_clear(ret);
     } else {
         funnel_until(data, stored, e, i+1);
     }
     if (segment->world_rank == 1) {
         
     }
-    mpz_add(stored, stored, add);
-    mpz_fdiv_q_2exp(tmp, stored, 1<<l);
-    mpz_fdiv_r_2exp(stored, stored, 1<<l);
-    mpz_set(rop, tmp); // TODO: work with rop as scratch?
+    fmpz_add(stored, stored, add);
+    fmpz_fdiv_q_2exp(tmp, stored, 1<<l);
+    fmpz_fdiv_r_2exp(stored, stored, 1<<l);
+    fmpz_set(rop, tmp); // TODO: work with rop as scratch?
+    // note: that might reduce ram infighting with multiple threads
 }
 
-void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int block) {
-    // It seems like the vector contains the mpz structs themselves.
-    // Thus dereferencing it takes a copy of size and limb pointer,
-    // which promptly get overridden when an operation is made, and the
-    // old struct is in invalid memory or something.
-    mpz_ptr stored = data->vars->stored[block];
-    mpz_ptr tmp = data->vars->tmp[block];
+void basecase_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int block) {
+    fmpz* stored = &data->vars->stored[block];
+    fmpz* tmp = &data->vars->tmp[block];
     uint64_t l = data->vars->block_size[block];
     basecase_table_t* table = data->vars->basecase_table;
     uint64_t bits = data->vars->table_bits;
@@ -231,20 +227,20 @@ void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int block) {
 
     uint64_t i = 0;
     for (; i < t - bits; i += bits) {
-        uint64_t index = mpz_get_ui(stored) & mask;
-        mpz_fdiv_q_2exp(tmp, stored, bits);
+        uint64_t index = fmpz_get_ui(stored) & mask;
+        fmpz_fdiv_q_2exp(tmp, stored, bits);
         uint64_t mem = static_cast<uint64_t>(table[index]);
-        mpz_mul_ui(stored, tmp, p3);
-        mpz_add_ui(stored, stored, mem);
+        fmpz_mul_ui(stored, tmp, p3);
+        fmpz_add_ui(stored, stored, mem);
     }
     for (; i < t; i += 1) {
-        mpz_fdiv_q_2exp(tmp, stored, 1);
-        mpz_add(stored, stored, tmp);
+        fmpz_fdiv_q_2exp(tmp, stored, 1);
+        fmpz_add(stored, stored, tmp);
     }
 
-    mpz_add(stored, stored, add);
-    mpz_fdiv_q_2exp(rop, stored, 1<<l);
-    mpz_fdiv_r_2exp(stored, stored, 1<<l);
+    fmpz_add(stored, stored, add);
+    fmpz_fdiv_q_2exp(rop, stored, 1<<l);
+    fmpz_fdiv_r_2exp(stored, stored, 1<<l);
 }
 
 // treating as message-passing and slightly inefficient but instead

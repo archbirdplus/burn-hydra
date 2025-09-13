@@ -2,7 +2,7 @@
 #define SEGMENT_H
 
 #include <gmp.h>
-#include <gmpxx.h>
+#include <flint/fmpz.h>
 #include <vector>
 
 #include "common.h"
@@ -11,10 +11,10 @@
 using basecase_table_t = uint32_t;
 
 typedef struct vars {
-    mpz_ptr update;
-    std::vector<mpz_ptr> p3;
-    std::vector<mpz_ptr> tmp;
-    std::vector<mpz_ptr> stored;
+    fmpz update;
+    std::vector<fmpz> p3;
+    std::vector<fmpz> tmp;
+    std::vector<fmpz> stored;
     basecase_table_t* basecase_table;
     uint64_t p3base;
     uint64_t table_bits;
@@ -37,7 +37,7 @@ void segment_finalize(data_t*);
 
 // internal objects exposed for benchmarking
 void init_table(vars_t* vars, uint64_t power);
-void basecase_burn(data_t* data, mpz_t rop, mpz_t add, uint64_t e, int block);
+void basecase_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int block);
 
 void print_segment_blocks(data_t*);
 void print_smallest_mod(data_t*, uint64_t);

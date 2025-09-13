@@ -1,4 +1,5 @@
 #include <gmp.h>
+#include <flint/fmpz.h>
 #include <cstdint>
 #include <iostream>
 #include <cassert>
@@ -93,7 +94,7 @@ void setup_vars(data_t* data) {
 
     vars_t* vars = data->vars;
     *vars = {
-        .update = (mpz_ptr) malloc (sizeof(mpz_t)),
+        .update = 0,
         .p3 = {},
         .tmp = {},
         .stored = {},
@@ -104,7 +105,7 @@ void setup_vars(data_t* data) {
         .block_size = {},
         .global_offset = {},
     };
-    mpz_init(vars->update);
+    fmpz_init(&vars->update);
     init_table(vars, table_bits);
 
     std::vector<std::vector<uint64_t>> sizes = data->config->block_sizes_used;
@@ -125,35 +126,32 @@ void setup_vars(data_t* data) {
     }
 
     uint64_t max_size = vars->block_size[0];
-    mpz_t r; mpz_init_set_ui(r, 3);
+    fmpz_t r; fmpz_init_set_ui(r, 3);
+    // TODO: <=?
     for (uint64_t i = 0; i <= max_size; i++) {
         // 3^(2^0) = 3^1 = 3 is the first element of p3
-        mpz_ptr next = (mpz_ptr) malloc (sizeof(mpz_t));
-        mpz_init_set(next, r);
-        vars->p3.push_back(next);
+        fmpz_t next; fmpz_init_set(next, r);
+        vars->p3.push_back(*next);
         // skip the last squaring
         if (i < max_size) {
-            mpz_mul(r, r, r);
+            fmpz_mul(r, r, r);
         }
     }
-    mpz_clear(r);
+    fmpz_clear(r);
 
     const int s = vars->block_size.size();
     for (int i = 0; i < s; i++) {
-        mpz_ptr a = (mpz_ptr) malloc (sizeof(mpz_t));
-        mpz_init(a);
+        fmpz a; fmpz_init(&a);
         vars->tmp.push_back(a);
-        mpz_ptr b = (mpz_ptr) malloc (sizeof(mpz_t));
-        mpz_init(b);
+        fmpz b; fmpz_init(&b);
         vars->stored.push_back(b);
     }
 
     if (seg->is_base_segment) {
-        mpz_set_ui(vars->stored[vars->stored.size()-1], data->problem->initial);
+        fmpz_set_ui(&vars->stored[vars->stored.size()-1], data->problem->initial);
     }
-    mpz_ptr stored = vars->stored[vars->stored.size()-1];
-    gmp_printf("rank %d init to %Zd\n", data->segment->world_rank, vars->stored[vars->stored.size()-1]);
-    gmp_printf("rank %d aka init to %Zd\n", data->segment->world_rank, stored);
+    fmpz stored = vars->stored[vars->stored.size()-1];
+    gmp_printf("rank %d aka init to %{fmpz}\n", data->segment->world_rank, &stored);
 }
 
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
