@@ -41,7 +41,7 @@ int main() {
     fmpz_t out; fmpz_init(out);
 
     uint64_t e = 8;
-    uint64_t p = 22;
+    uint64_t p = 20;
 
     std::vector<double> times = {};
     int max_attempts = 3;

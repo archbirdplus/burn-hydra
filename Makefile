@@ -10,7 +10,7 @@ MPICC?=mpic++
 CFLAGS+=-std=c++17 -lstdc++ -L/opt/homebrew/Cellar/flint/3.3.1/lib -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I/opt/homebrew/Cellar/flint/3.3.1/include -I/opt/homebrew/Cellar/gmp/6.3.0/include -lflint -lgmp -I include -Wall -Wextra
 
 burn_hydra: ${SOURCES} ${HEADERS} ${BURN_SOURCES} out
-	${MPICC} -g -O2 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS}
+	${MPICC} -g -O0 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS}
 
 bench: bench_basecase bench_smallchain
 
@@ -21,7 +21,7 @@ bench_smallchain: ${TESTS} ${SOURCES} ${HEADERS} ${BURN_SOURCES} testdir
 	for i in $$(seq 3); do \
 		(time (mpirun -n 2 -- testdir/burn_hydra -x 8 -n 67108864 -c 8-18,18-26 \
 			| grep 31848934250314775156605172273469025153 | grep 2246674935863200705435021934434735832940657095564955971137014 \
-			|| echo "Incorrect signature.") ) 2>&1 | grep real; \
+			|| echo "Incorrect signature.") ) 2>&1 | grep -e real -e 'H^2^' -e "Incorrect"; \
 	done
 
 # a test consisting only of the lowest few bits

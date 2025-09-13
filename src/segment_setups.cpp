@@ -1,4 +1,4 @@
-#include <gmp.h>
+#include <flint/flint.h>
 #include <flint/fmpz.h>
 #include <cstdint>
 #include <iostream>
@@ -151,7 +151,7 @@ void setup_vars(data_t* data) {
         fmpz_set_ui(&vars->stored[vars->stored.size()-1], data->problem->initial);
     }
     fmpz stored = vars->stored[vars->stored.size()-1];
-    gmp_printf("rank %d aka init to %{fmpz}\n", data->segment->world_rank, &stored);
+    flint_printf("rank %d init to %{fmpz}\n", data->segment->world_rank, &stored);
 }
 
 data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {

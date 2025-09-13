@@ -1,4 +1,5 @@
 #include <gmp.h>
+#include <flint/flint.h>
 #include <flint/fmpz.h>
 #include <iostream>
 #include <vector>

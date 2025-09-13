@@ -13,7 +13,7 @@ void send(metrics_t* metrics, int rank, int d, fmpz_t fx) {
     timer_start(metrics, d > 0 ? waiting_send_left : waiting_send_right);
     timer_start(metrics, d > 0 ? waiting_send_left_copy : waiting_send_right_copy);
     _fmpz_promote_val(fx);
-    mpz_ptr x = COEFF_TO_PTR(fx);
+    mpz_ptr x = COEFF_TO_PTR(*fx);
     const size_t size = 8; // bytes per limb?
     const size_t numb = GMP_LIMB_BITS; // nah, don't do nails
     const size_t count = (mpz_sizeinbase(x, 2) + numb-1)/numb;
@@ -44,7 +44,7 @@ void recv(metrics_t* metrics, int rank, int d, fmpz_t fx) {
     timer_start(metrics, d > 0 ? waiting_recv_left_copy : waiting_recv_right_copy);
     const size_t size = 8;
     _fmpz_promote(fx);
-    mpz_ptr x = COEFF_TO_PTR(fx);
+    mpz_ptr x = COEFF_TO_PTR(*fx);
     mpz_import(x, static_cast<size_t>(count), 1, size, 0, 0, buf);
     timer_stop(metrics, d > 0 ? waiting_recv_left_copy : waiting_recv_right_copy);
     timer_stop(metrics, d > 0 ? waiting_recv_left : waiting_recv_right);
@@ -74,7 +74,8 @@ void gather(data_t* data, fmpz_t fitem, fmpz* buffer, int root) {
     int* sizesbuf = (int*) malloc(world_size * sizeof(int));
     int* displs = (int*) malloc(world_size * sizeof(int));
     const uint64_t limb_size = 8; // bytes?
-    mpz_ptr item = COEFF_TO_PTR(fitem);
+    _fmpz_promote_val(fitem);
+    mpz_ptr item = COEFF_TO_PTR(*fitem);
     const uint64_t send_limb_count = mpz_size(item);
     void* sendbuf = malloc(send_limb_count*(uint64_t)limb_size);
     size_t sent_limb_count;
@@ -101,7 +102,7 @@ void gather(data_t* data, fmpz_t fitem, fmpz* buffer, int root) {
         for (int i = 0; i < world_size; i++) {
             fmpz* rop = &buffer[i];
             _fmpz_promote(rop);
-            mpz_import(COEFF_TO_PTR(rop), static_cast<size_t>(sizesbuf[i]), order, limb_size, 0, 0, (void*)(&limbs[displs[i]]));
+            mpz_import(COEFF_TO_PTR(*rop), static_cast<size_t>(sizesbuf[i]), order, limb_size, 0, 0, (void*)(&limbs[displs[i]]));
         }
         free(limbs);
     }
