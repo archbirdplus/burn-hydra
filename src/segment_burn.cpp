@@ -64,7 +64,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
         // gmp_printf("%d      sent left: %d bits\n", segment->world_rank, fmpz_sizeinbase(output, 2));
         sendLeft(data, output);
     } else {
-        fmpz_mul_2exp(update, output, 1<<l);
+        fmpz_mul_2exp(update, output, (uint64_t)1<<l);
     }
     fmpz_clear(output);
 
@@ -82,7 +82,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     // as they remain in sync
     // however right-shifts have to be adjusted for being smaller?
 
-    return 1<<e;
+    return (uint64_t)1<<e;
 }
 
 void segment_finalize(data_t* data) {
@@ -92,7 +92,7 @@ void segment_finalize(data_t* data) {
     fmpz* update = &data->vars->update;
     fmpz* stored = &data->vars->stored[0];
     if (!data->segment->is_top_segment) {
-        fmpz_mul_2exp(update, update, 1<<l);
+        fmpz_mul_2exp(update, update, (uint64_t)1<<l);
     }
     fmpz_add(stored, stored, update);
 }
@@ -108,8 +108,8 @@ void funnel_until(data_t* data, fmpz_t x, uint64_t e, int i) {
         // return top(x) + recv_carry(tail(x))
         fmpz_mul(x, x, &p3[e]);
         fmpz_t tmp2; fmpz_init(tmp2);
-        fmpz_fdiv_r_2exp(tmp2, x, 1<<e);
-        fmpz_fdiv_q_2exp(x, x, 1<<e);
+        fmpz_fdiv_r_2exp(tmp2, x, (uint64_t)1<<e);
+        fmpz_fdiv_q_2exp(x, x, (uint64_t)1<<e);
         fmpz_t res; fmpz_init(res);
         recursive_burn(data, res, tmp2, e, i);
         fmpz_clear(tmp2);
@@ -124,7 +124,7 @@ void funnel_until(data_t* data, fmpz_t x, uint64_t e, int i) {
         fmpz_t next; fmpz_init(next);
         // high, one low per stack
         // high is n/2, low is actually n*1.6
-        uint64_t t = 1<<(e-1);
+        uint64_t t = (uint64_t)1<<(e-1);
         fmpz_set(next, x);
         for (int j = 0; j < 2; j++) {
             fmpz_fdiv_r_2exp(next, x, t);
@@ -169,7 +169,7 @@ void recursive_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int i) {
     std::vector<fmpz> p3 = data->vars->p3;
     if (i == static_cast<int>(blocks.size()) - 1) {
         // Therefore we have the right size to pass to the next node.
-        uint64_t t = 1<<e;
+        uint64_t t = (uint64_t)1<<e;
         // TODO: store this
         fmpz_t ret; fmpz_init(ret);
         if (segment->is_base_segment) {
@@ -209,8 +209,8 @@ void recursive_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int i) {
         
     }
     fmpz_add(stored, stored, add);
-    fmpz_fdiv_q_2exp(tmp, stored, 1<<l);
-    fmpz_fdiv_r_2exp(stored, stored, 1<<l);
+    fmpz_fdiv_q_2exp(tmp, stored, (uint64_t)1<<l);
+    fmpz_fdiv_r_2exp(stored, stored, (uint64_t)1<<l);
     fmpz_set(rop, tmp); // TODO: work with rop as scratch?
     // note: that might reduce ram infighting with multiple threads
 }
@@ -224,7 +224,7 @@ void basecase_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int block) 
     uint64_t base = (uint64_t)1<<bits;
     uint64_t mask = base-1;
     uint64_t p3 = data->vars->p3base;
-    uint64_t t = 1<<e;
+    uint64_t t = (uint64_t)1<<e;
 
     _fmpz_promote_val(fstored);
     _fmpz_promote_val(ftmp);
@@ -245,8 +245,8 @@ void basecase_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int block) 
     }
 
     fmpz_add(fstored, fstored, add);
-    fmpz_fdiv_q_2exp(rop, fstored, 1<<l);
-    fmpz_fdiv_r_2exp(fstored, fstored, 1<<l);
+    fmpz_fdiv_q_2exp(rop, fstored, (uint64_t)1<<l);
+    fmpz_fdiv_r_2exp(fstored, fstored, (uint64_t)1<<l);
 }
 
 // treating as message-passing and slightly inefficient but instead
