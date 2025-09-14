@@ -65,11 +65,11 @@ void receiveRight(data_t* data, fmpz_t x) {
 
 
 void gather(data_t* data, fmpz_t fitem, fmpz* buffer, int root) {
+    timer_start(data->metrics, gather_communication);
     const int world_size = data->segment->world_size;
-    // timer
-    // Despite our willingness to do it, both GMP and MPI
+    // Despite our willingness to do it, GMP, FLINT, and MPI all
     // count object sizes in `int`- the signed 32 bit integer.
-    // By specifying `long`s we can get roughly 2^38 sizes messages,
+    // By specifying `long`s we can get roughly 2^38 sized messages,
     // after which everything would crash hard and in unison.
     int* sizesbuf = (int*) malloc(world_size * sizeof(int));
     int* displs = (int*) malloc(world_size * sizeof(int));
@@ -79,13 +79,11 @@ void gather(data_t* data, fmpz_t fitem, fmpz* buffer, int root) {
     const uint64_t send_limb_count = mpz_size(item);
     void* sendbuf = malloc(send_limb_count*(uint64_t)limb_size);
     size_t sent_limb_count;
-    // timer
     // TODO: this should be incorrect, in the edge case that
     // the size allocated is slightly longer than the size used
     const int order = -1;
     mpz_export(sendbuf, &sent_limb_count, order, limb_size, 0, 0, item);
     assert(send_limb_count == sent_limb_count);
-    // timer
     int send_limb_count_int = static_cast<int>(send_limb_count);
     MPI_Gather(&send_limb_count_int, 1, MPI_INT, sizesbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
     uint64_t* limbs = nullptr;
@@ -97,7 +95,6 @@ void gather(data_t* data, fmpz_t fitem, fmpz* buffer, int root) {
         limbs = (uint64_t*) calloc(displs[world_size-1] + sizesbuf[world_size-1], sizeof(uint64_t));
     }
     MPI_Gatherv(sendbuf, send_limb_count_int, MPI_LONG, limbs, sizesbuf, displs, MPI_LONG, root, MPI_COMM_WORLD);
-    // timer
     if (data->segment->world_rank == root) {
         for (int i = 0; i < world_size; i++) {
             fmpz* rop = &buffer[i];
@@ -109,7 +106,7 @@ void gather(data_t* data, fmpz_t fitem, fmpz* buffer, int root) {
     free(sendbuf);
     free(displs);
     free(sizesbuf);
-    // timer
+    timer_stop(data->metrics, gather_communication);
 }
 
 

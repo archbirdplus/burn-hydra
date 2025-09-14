@@ -23,6 +23,7 @@ const char* timer_class_names[] = {
     "waiting to recv right (copying)",
     "grinding basecase",
     "grinding chain",
+    "gather communication",
     "actively",
     "uh oh",
 };
@@ -57,6 +58,7 @@ void init_metrics(metrics_t* metrics, bool full_logs) {
     timers->intervals[initializing] = std::vector<start_stop_t>();
     timers->intervals[waiting_send_left] = std::vector<start_stop_t>();
     timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
+    timers->intervals[gather_communication] = std::vector<start_stop_t>();
     if (full_logs) {
         timers->intervals[waiting_send_right] = std::vector<start_stop_t>();
         timers->intervals[waiting_recv_right] = std::vector<start_stop_t>();

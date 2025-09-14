@@ -22,6 +22,7 @@ enum timer_class {
     waiting_recv_right_copy,
     grinding_basecase,
     grinding_chain,
+    gather_communication,
     active_time,
     _timer_classes,
 };
