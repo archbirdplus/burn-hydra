@@ -38,6 +38,8 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     // iterations can't exceed size because that causes problems
     // either in validity or in the memory architecture
     if (e >= l) {
+        // TODO: this is the only reason it's not trying to do 2^1048576 size
+        // steps. e is a number of iterations, not its logarithm
         e = l;
     } else {
         // TODO: handle small steps

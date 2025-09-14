@@ -55,6 +55,9 @@ int main(int argc, char** argv) {
             next_checkpoint += config.checkpoint_interval;
         }
         if (iterations >= (uint64_t)1<<next_special) {
+            if (iterations != (uint64_t)1<<next_special) {
+                std::cout << "iterations: " << iterations << " next special: " << ((uint64_t)1<<next_special) << std::endl;
+            }
             assert(iterations == (uint64_t)1<<next_special);
             print_special_2exp(data, next_special);
             next_special += 1;
