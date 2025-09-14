@@ -15,7 +15,7 @@ const ranks = JSON.parse(data);
 const rank_count = Object.keys(ranks).length;
 
 function max_time() {
-    const xs = ranks["rank 0"]['waiting to recv left'];
+    const xs = ranks["rank 0"]['actively'];
     return xs[xs.length-1][1];
 }
 

@@ -55,6 +55,7 @@ void init_metrics(metrics_t* metrics, bool full_logs) {
         timers->intervals[i] = std::nullopt;
     }
     #ifndef NO_PLOT_LOGS
+    timers->intervals[active_time] = std::vector<start_stop_t>();
     timers->intervals[initializing] = std::vector<start_stop_t>();
     timers->intervals[waiting_send_left] = std::vector<start_stop_t>();
     timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
@@ -124,7 +125,7 @@ void dump_metrics(metrics_t* metrics, int rank) {
         return;
     }
     std::cout << "Dumping json timer intervals." << std::endl;
-    const start_time_t first_start = (*metrics->timers.intervals[initializing])[0].start;
+    const start_time_t first_start = (*metrics->timers.intervals[active_time])[0].start;
     if (rank > 0) {
         f << ",";
     }
