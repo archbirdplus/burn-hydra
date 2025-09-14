@@ -15,7 +15,7 @@ const ranks = JSON.parse(data);
 const rank_count = Object.keys(ranks).length;
 
 function max_time() {
-    const xs = ranks["rank 0"]['grinding basecase'];
+    const xs = ranks["rank 0"]['waiting to recv left'];
     return xs[xs.length-1][1];
 }
 
@@ -37,6 +37,7 @@ function render() {
         for (opts of timer_opts) {
             const color = opts[3];
             ctx.fillStyle = color;
+            if (!timers[opts[0]]) { continue; }
             for (start_stop of timers[opts[0]]) {
                 const d = start_stop[1] - start_stop[0]
                 ctx.fillRect(x_pos + width*opts[1], start_stop[0]*heightscale, width*opts[2], d*heightscale);

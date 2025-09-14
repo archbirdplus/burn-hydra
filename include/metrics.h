@@ -59,7 +59,7 @@ typedef struct metrics {
 start_time_t nanos();
 double seconds(std::chrono::nanoseconds);
 
-void init_metrics(metrics_t*);
+void init_metrics(metrics_t*, bool);
 
 void timer_start(metrics_t*, timer_class);
 void timer_stop(metrics_t*, timer_class);

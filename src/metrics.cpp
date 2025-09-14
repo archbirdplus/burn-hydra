@@ -42,24 +42,26 @@ double seconds(std::chrono::nanoseconds time) {
     return seconds.count();
 }
 
-void init_metrics(metrics_t* metrics) {
+void init_metrics(metrics_t* metrics, bool full_logs) {
     // for some reason malloc here is _really_ bad, and puts
     // a brk instead of this whole function specifically in -O2
     for (int i = 0; i < _timer_classes; i++) {
         metrics->timers.total[i] = std::chrono::nanoseconds::zero();
         metrics->timers.last_start[i] = std::nullopt;
     }
+    timers_t* timers = &metrics->timers;
     for (int i = 0; i < _timer_classes; i++) {
-        metrics->timers.intervals[i] = std::nullopt;
+        timers->intervals[i] = std::nullopt;
     }
     #ifndef NO_PLOT_LOGS
-    metrics->timers.intervals[initializing] = std::vector<start_stop_t>();
-    metrics->timers.intervals[waiting_send_left] = std::vector<start_stop_t>();
-    metrics->timers.intervals[waiting_recv_left] = std::vector<start_stop_t>();
-    metrics->timers.intervals[waiting_send_right] = std::vector<start_stop_t>();
-    metrics->timers.intervals[waiting_recv_right] = std::vector<start_stop_t>();
-    metrics->timers.intervals[grinding_basecase] = std::vector<start_stop_t>();
-    metrics->timers.intervals[grinding_chain] = std::vector<start_stop_t>();
+    timers->intervals[initializing] = std::vector<start_stop_t>();
+    timers->intervals[waiting_send_left] = std::vector<start_stop_t>();
+    timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
+    if (full_logs) {
+        timers->intervals[waiting_send_right] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_right] = std::vector<start_stop_t>();
+        timers->intervals[grinding_chain] = std::vector<start_stop_t>();
+    }
     #endif
     // the rest are zero-initialized
 }
