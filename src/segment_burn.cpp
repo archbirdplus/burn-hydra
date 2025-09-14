@@ -1,4 +1,5 @@
 #include <gmp.h>
+#include <flint/flint.h>
 #include <flint/fmpz.h>
 #include <cstdlib>
 #include <cassert>
@@ -215,8 +216,8 @@ void recursive_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int i) {
 }
 
 void basecase_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int block) {
-    fmpz* stored = &data->vars->stored[block];
-    fmpz* tmp = &data->vars->tmp[block];
+    fmpz* fstored = &data->vars->stored[block];
+    fmpz* ftmp = &data->vars->tmp[block];
     uint64_t l = data->vars->block_size[block];
     basecase_table_t* table = data->vars->basecase_table;
     uint64_t bits = data->vars->table_bits;
@@ -225,22 +226,27 @@ void basecase_burn(data_t* data, fmpz_t rop, fmpz_t add, uint64_t e, int block) 
     uint64_t p3 = data->vars->p3base;
     uint64_t t = 1<<e;
 
+    _fmpz_promote_val(fstored);
+    _fmpz_promote_val(ftmp);
+    mpz_ptr stored = COEFF_TO_PTR(*fstored);
+    mpz_ptr tmp = COEFF_TO_PTR(*ftmp);
+
     uint64_t i = 0;
     for (; i < t - bits; i += bits) {
-        uint64_t index = fmpz_get_ui(stored) & mask;
-        fmpz_fdiv_q_2exp(tmp, stored, bits);
+        uint64_t index = mpz_get_ui(stored) & mask;
+        mpz_fdiv_q_2exp(tmp, stored, bits);
         uint64_t mem = static_cast<uint64_t>(table[index]);
-        fmpz_mul_ui(stored, tmp, p3);
-        fmpz_add_ui(stored, stored, mem);
+        mpz_mul_ui(stored, tmp, p3);
+        mpz_add_ui(stored, stored, mem);
     }
     for (; i < t; i += 1) {
-        fmpz_fdiv_q_2exp(tmp, stored, 1);
-        fmpz_add(stored, stored, tmp);
+        mpz_fdiv_q_2exp(tmp, stored, 1);
+        mpz_add(stored, stored, tmp);
     }
 
-    fmpz_add(stored, stored, add);
-    fmpz_fdiv_q_2exp(rop, stored, 1<<l);
-    fmpz_fdiv_r_2exp(stored, stored, 1<<l);
+    fmpz_add(fstored, fstored, add);
+    fmpz_fdiv_q_2exp(rop, fstored, 1<<l);
+    fmpz_fdiv_r_2exp(fstored, fstored, 1<<l);
 }
 
 // treating as message-passing and slightly inefficient but instead
