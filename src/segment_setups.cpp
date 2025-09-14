@@ -127,7 +127,7 @@ void setup_vars(data_t* data) {
 
     uint64_t max_size = vars->block_size[0];
     fmpz_t r; fmpz_init_set_ui(r, 3);
-    // TODO: <=?
+    // TODO: yes, inclusive
     for (uint64_t i = 0; i <= max_size; i++) {
         // 3^(2^0) = 3^1 = 3 is the first element of p3
         fmpz_t next; fmpz_init_set(next, r);
