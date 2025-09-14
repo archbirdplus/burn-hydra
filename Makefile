@@ -10,7 +10,7 @@ MPICC?=mpic++
 CFLAGS+=-std=c++17 -lstdc++ -L/opt/homebrew/Cellar/flint/3.3.1/lib -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I/opt/homebrew/Cellar/flint/3.3.1/include -I/opt/homebrew/Cellar/gmp/6.3.0/include -lflint -lgmp -I include -Wall -Wextra
 
 burn_hydra: ${SOURCES} ${HEADERS} ${BURN_SOURCES} out
-	${MPICC} -g -O0 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS}
+	${MPICC} -g -O2 -o out/burn_hydra ${BURN_SOURCES} ${SOURCES} ${CFLAGS}
 
 bench: bench_basecase bench_smallchain
 
