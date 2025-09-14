@@ -54,12 +54,12 @@ int main(int argc, char** argv) {
             std::cout << "TODO: checkpoint" << std::endl;
             next_checkpoint += config.checkpoint_interval;
         }
-        if (iterations >= 1<<next_special) {
-            assert(iterations == 1<<next_special);
+        if (iterations >= (uint64_t)1<<next_special) {
+            assert(iterations == (uint64_t)1<<next_special);
             print_special_2exp(data, next_special);
             next_special += 1;
         }
-        int64_t steps_to_special = (1<<next_special) - iterations;
+        int64_t steps_to_special = ((uint64_t)1<<next_special) - iterations;
         int64_t steps = steps_to_special;
         if (config.checkpoint_interval) {
             int64_t steps_to_checkpoint = next_checkpoint - iterations;
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     }
     segment_finalize(data);
 
-    if (iterations == 1<<next_special) {
+    if (iterations == (uint64_t)1<<next_special) {
         print_special_2exp(data, next_special);
     } else {
         // not great but whatever, should confuse someone
