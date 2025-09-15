@@ -4,6 +4,7 @@ const timer_opts = [
     ["waiting to recv left", 0.0, 0.15, "dark orange"],
     ["grinding chain", 0.15, 0.7, "gray"],
     ["grinding basecase", 0.7, 0.15, "blue"],
+    ["gather communication", 0.3, 0.4, "green"],
     ["waiting to send right", 0.85, 0.15, "blue"],
     ["waiting to recv right", 0.85, 0.15, "dark blue"],
 ]
@@ -21,7 +22,7 @@ function max_time() {
 
 const max = max_time();
 
-canvas.height = 400*max;
+canvas.height = 400*max/100;
 canvas.width = 600;
 document.body.style.backgroundColor = 'black';
 
