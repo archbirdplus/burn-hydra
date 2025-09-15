@@ -170,6 +170,7 @@ data_t* segment_init(problem_t* problem, config_t* config, segment_t* segment) {
     };
     constrain_config(data);
     setup_vars(data);
+    flint_set_num_threads(data->segment->world_rank > -1 ? 4 : 1);
     timer_stop(metrics, initializing);
     return data;
 }
