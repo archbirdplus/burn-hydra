@@ -1,12 +1,12 @@
 const timer_opts = [
     ["initializing variables", 0.3, 0.4, "green"],
     ["waiting to send left", 0.0, 0.15, "orange"],
-    ["waiting to recv left", 0.0, 0.15, "dark orange"],
+    ["waiting to recv left", 0.0, 0.15, "red"],
     ["grinding chain", 0.15, 0.7, "gray"],
     ["grinding basecase", 0.7, 0.15, "blue"],
     ["gather communication", 0.3, 0.4, "green"],
-    ["waiting to send right", 0.85, 0.15, "blue"],
-    ["waiting to recv right", 0.85, 0.15, "dark blue"],
+    ["waiting to send right", 0.85, 0.15, "purple"],
+    ["waiting to recv right", 0.85, 0.15, "blue"],
 ]
 
 const canvas = document.getElementById("canvas");
