@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
+#include <cmath>
 
 #include "common.h"
 #include "communicate.h"
