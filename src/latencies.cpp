@@ -99,7 +99,7 @@ stats_t make_stat_against(metrics_t* metrics, latencies_config_t* config, int ra
     MPI_Barrier(MPI_COMM_WORLD);
     for(size_t i = 0; i < config->sizes.size(); i++) {
         fmpz_t send_num; fmpz_init(send_num);
-        fmpz_t recv_num; fmpz_init(send_num);
+        fmpz_t recv_num; fmpz_init(recv_num);
         fmpz_randbits_unsigned(send_num, rand, (uint64_t)1<<config->sizes[i]);
         vec<double> times = {};
         double mean = 0;
@@ -118,6 +118,8 @@ stats_t make_stat_against(metrics_t* metrics, latencies_config_t* config, int ra
         stddev = sqrt(stddev)/(static_cast<double>(times.size())-1);
         stats.means.push_back(mean);
         stats.stddevs.push_back(stddev);
+        fmpz_clear(send_num);
+        fmpz_clear(recv_num);
     }
     return stats;
 }
@@ -128,9 +130,18 @@ vec<stats_t> make_stats(metrics_t* metrics, latencies_config_t* config, int rank
     int other;
     vec<stats_t> list = {};
     for (int n = 0; n < size; n++) {
+        list.push_back({.means={},.stddevs={}});
+    }
+    for (int n = 0; n < size; n++) {
         other = get_opponent(rank, size, n);
         if (other < 0) { break; }
-        list.push_back(make_stat_against(metrics, config, rank, other, rand));
+        std::cout << "rank " << rank << " versus " << other << std::endl;
+        list[other] = make_stat_against(metrics, config, rank, other, rand);
+    }
+    // TODO: should get_opponent use a more consistent policy here?
+    if (list[rank].means.size() == 0) {
+        std::cout << "rank " << rank << " versus " << rank << std::endl;
+        list[rank] = make_stat_against(metrics, config, rank, rank, rand);
     }
     flint_rand_clear(rand);
     return list;
@@ -164,7 +175,9 @@ vec<latency_matrix_t> gather_stats(latencies_config_t* config, int rank, int wor
         matrix_buffer = (double*) malloc (world_size * doubles_count * sizeof(double));
     }
 
-    MPI_Gather(doubles, doubles_count, MPI_DOUBLE, matrix_buffer, world_size*doubles_count, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    std::cout << "about to gather" << std::endl;
+    MPI_Gather(doubles, doubles_count, MPI_DOUBLE, matrix_buffer, doubles_count, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    std::cout << "gathered" << std::endl;
     free(doubles);
 
     if (rank != root) { return {}; }
@@ -206,14 +219,14 @@ void print_stats(latencies_config_t* config, int world_rank, int world_size, vec
         }
         std::cout << config->sizes[size_ind];
     }
-    std::cout << "], {\"counts\": [";
+    std::cout << "], \"counts\": [";
     for (size_t size_ind = 0; size_ind < config->sizes.size(); size_ind++) {
         if (size_ind != 0) {
             std::cout << ", ";
         }
         std::cout << config->counts[size_ind];
     }
-    std::cout << "], {\"means\": [";
+    std::cout << "], \"means\": [";
     for (size_t size_ind = 0; size_ind < config->sizes.size(); size_ind++) {
         if (size_ind != 0) {
             std::cout << ", ";
@@ -234,7 +247,7 @@ void print_stats(latencies_config_t* config, int world_rank, int world_size, vec
         }
         std::cout << "]";
     }
-    std::cout << "], {\"stddevs\": [";
+    std::cout << "], \"stddevs\": [";
     for (size_t size_ind = 0; size_ind < config->sizes.size(); size_ind++) {
         if (size_ind != 0) {
             std::cout << ", ";
@@ -255,5 +268,5 @@ void print_stats(latencies_config_t* config, int world_rank, int world_size, vec
         }
         std::cout << "]";
     }
-    std::cout << "]";
+    std::cout << "]}" << std::endl;
 }
