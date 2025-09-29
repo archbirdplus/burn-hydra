@@ -263,7 +263,7 @@ void print_stats(latencies_config_t* config, int world_rank, int world_size, vec
                 if (target != 0) {
                     std::cout << ", ";
                 }
-                std::cout << stats[size_ind].means[source * world_size + target];
+                std::cout << stats[size_ind].stddevs[source * world_size + target];
             }
             std::cout << "]";
         }
