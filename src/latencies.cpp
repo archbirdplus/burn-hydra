@@ -77,7 +77,7 @@ void test_get_opponent() {
     exit(has_error ? 1 : 0);
 }
 
-uint64_t time_swap(metrics_t* metrics, int rank, int other, fmpz_t in_num, fmpz_t out_num) {
+double time_swap(metrics_t* metrics, int rank, int other, fmpz_t in_num, fmpz_t out_num) {
     auto start = nanos();
     // lower node sends first
     if (rank == other) {
