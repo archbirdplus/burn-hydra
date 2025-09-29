@@ -8,20 +8,7 @@
 #include "segment.h"
 #include "common.h"
 #include "metrics.h"
-
-void friendly_assert(bool condition, const char* message) {
-    if (!condition) {
-        std::cerr << message << std::endl;
-        exit(1);
-    }
-}
-
-void friendly_concern(bool* anyerror, bool condition, const char* message) {
-    if (!condition) {
-        *anyerror = true;
-        std::cerr << message << std::endl;
-    }
-}
+#include "friendly_assert.h"
 
 // Drop non-existent blocks and check for constraints.
 void constrain_config(data_t* data) {

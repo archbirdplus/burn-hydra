@@ -65,6 +65,8 @@ void init_metrics(metrics_t* metrics, bool full_logs) {
         timers->intervals[waiting_recv_right] = std::vector<start_stop_t>();
         timers->intervals[grinding_chain] = std::vector<start_stop_t>();
     }
+    #else
+    (void)full_logs;
     #endif
     // the rest are zero-initialized
 }

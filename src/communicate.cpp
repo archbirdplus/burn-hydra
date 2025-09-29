@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "common.h"
+#include "communicate.h"
 #include "segment.h"
 #include "metrics.h"
 
