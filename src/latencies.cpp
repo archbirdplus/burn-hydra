@@ -201,8 +201,8 @@ vec<latency_matrix_t> gather_stats(latencies_config_t* config, int rank, int wor
             for (int target = 0; target < world_size; target++) {
                 const size_t buf_target_offset = target * 2 * size_groups;
                 const size_t pair_offset = buf_source_offset + buf_target_offset;
-                double mean = matrix_buffer[pair_offset];
-                double stddev = matrix_buffer[pair_offset];
+                double mean = matrix_buffer[pair_offset + size_ind];
+                double stddev = matrix_buffer[pair_offset + size_ind];
                 means[source * world_size + target] = mean;
                 stddevs[source * world_size + target] = stddev;
             }
