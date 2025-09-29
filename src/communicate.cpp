@@ -27,6 +27,7 @@ void send(metrics_t* metrics, int rank, int d, fmpz_t fx) {
     timer_start(metrics, d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
     // TODO: named tag constants
     const int error = MPI_Send(buf, countp, MPI_LONG, rank, 1, MPI_COMM_WORLD);
+    free(buf);
     timer_stop(metrics, d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
     assert(error == 0);
     timer_stop(metrics, d > 0 ? waiting_send_left : waiting_send_right);
@@ -47,6 +48,7 @@ void recv(metrics_t* metrics, int rank, int d, fmpz_t fx) {
     _fmpz_promote(fx);
     mpz_ptr x = COEFF_TO_PTR(*fx);
     mpz_import(x, static_cast<size_t>(count), 1, size, 0, 0, buf);
+    free(buf);
     timer_stop(metrics, d > 0 ? waiting_recv_left_copy : waiting_recv_right_copy);
     timer_stop(metrics, d > 0 ? waiting_recv_left : waiting_recv_right);
 }
