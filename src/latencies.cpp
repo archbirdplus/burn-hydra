@@ -104,19 +104,20 @@ stats_t make_stat_against(metrics_t* metrics, latencies_config_t* config, int ra
         fmpz_randbits_unsigned(send_num, rand, (uint64_t)1<<config->sizes[i]);
         vec<double> times = {};
         double mean = 0;
-        for (size_t j = 0; j < config->counts.size(); j++) {
+        const size_t repetitions = config->counts[i];
+        for (size_t j = 0; j < repetitions; j++) {
             const double t = time_swap(metrics, rank, other, recv_num, send_num);
             times.push_back(t);
             mean += t;
         }
         // TODO: assert?
-        mean /= static_cast<double>(times.size());
+        mean /= static_cast<double>(repetitions);
         double stddev = 0;
-        for (size_t j = 0; j < times.size(); j++) {
+        for (size_t j = 0; j < repetitions; j++) {
             const double d = times[j]-mean;
             stddev += d*d;
         }
-        stddev = sqrt(stddev)/(static_cast<double>(times.size())-1);
+        stddev = sqrt(stddev)/(static_cast<double>(repetitions-1));
         stats.means.push_back(mean);
         stats.stddevs.push_back(stddev);
         fmpz_clear(send_num);
