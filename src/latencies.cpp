@@ -89,7 +89,9 @@ double time_swap(metrics_t* metrics, int rank, int other, fmpz_t in_num, fmpz_t 
         recv(metrics, other, 0, in_num);
         send(metrics, other, 0, out_num);
     }
-    return seconds(nanos() - start);
+    const auto time = seconds(nanos() - start);
+    std::cout << "single swap took " << time << std::endl;
+    return time;
 }
 
 stats_t make_stat_against(metrics_t* metrics, latencies_config_t* config, int rank, int other, flint_rand_t rand) {
