@@ -21,23 +21,20 @@ void basecase_burn(data_t*, fmpz_t, fmpz_t, uint64_t, int);
 int64_t segment_burn(data_t* data, int64_t max_iterations) {
     uint64_t e = n_flog(static_cast<uint64_t>(max_iterations), 2); // log iterations
     uint64_t l = data->vars->block_size[0]; // log size
-    // iterations can't exceed size because that causes problems
-    // either in validity or in the memory architecture
     if (e >= l) {
-        // TODO: this is the only reason it's not trying to do 2^1048576 size
-        // steps. e is a number of iterations, not its logarithm
+        // Iterations can't exceed size because that causes problems
+        // either in validity or in the memory architecture.
+        // TODO: can this interfere with bigger steps above?
         e = l;
-        printf("saturated   step at %lld / %lld\n", max_iterations, l);
     } else {
-        printf("doing small step at %lld / %lld\n", max_iterations, l);
-        // TODO: handle small steps
+        // TODO: Handle small steps. Ensure consistency with smaller segments.
     }
     segment_t* segment = data->segment;
     vars_t* vars = data->vars;
 
     // TODO: this is also part of the left-truncation condition.
     // When the result leaves the segment's light cone, it should
-    // be able to simply disappear.
+    // be pruned.
     // Currently, just a crude approximation so that we use finite space.
     bool dont_communicate_left = segment->is_top_segment;
 
