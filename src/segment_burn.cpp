@@ -1,6 +1,7 @@
 #include <gmp.h>
 #include <flint/flint.h>
 #include <flint/fmpz.h>
+#include <flint/ulong_extras.h> // n_flog
 #include <cstdlib>
 #include <cassert>
 #include <cstdint>
@@ -11,29 +12,14 @@
 #include "communicate.h"
 #include "metrics.h"
 
-// Largest power of 2 up to and including x.
-// https://stackoverflow.com/questions/4398711/round-to-the-nearest-power-of-two#4398845
-uint64_t nearest2pow(uint64_t x) {
-    uint64_t v = x;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v |= v >> 32;
-    v++;
-    v >>= 1;
-    return v;
-}
-
 int segment_burn(data_t*, int);
 void recursive_burn(data_t*, fmpz_t, fmpz_t, uint64_t, int);
 void funnel_until(data_t*, fmpz_t, uint64_t, int);
 void basecase_burn(data_t*, fmpz_t, fmpz_t, uint64_t, int);
 
 // Returns number of iterations actually completed.
-int segment_burn(data_t* data, int64_t max_iterations) {
-    uint64_t e = nearest2pow(static_cast<uint64_t>(max_iterations)); // log iterations
+int64_t segment_burn(data_t* data, int64_t max_iterations) {
+    uint64_t e = n_flog(static_cast<uint64_t>(max_iterations), 2); // log iterations
     uint64_t l = data->vars->block_size[0]; // log size
     // iterations can't exceed size because that causes problems
     // either in validity or in the memory architecture
@@ -41,7 +27,9 @@ int segment_burn(data_t* data, int64_t max_iterations) {
         // TODO: this is the only reason it's not trying to do 2^1048576 size
         // steps. e is a number of iterations, not its logarithm
         e = l;
+        printf("saturated   step at %lld / %lld\n", max_iterations, l);
     } else {
+        printf("doing small step at %lld / %lld\n", max_iterations, l);
         // TODO: handle small steps
     }
     segment_t* segment = data->segment;
@@ -84,7 +72,7 @@ int segment_burn(data_t* data, int64_t max_iterations) {
     // as they remain in sync
     // however right-shifts have to be adjusted for being smaller?
 
-    return (uint64_t)1<<e;
+    return (int64_t)1<<e;
 }
 
 void segment_finalize(data_t* data) {

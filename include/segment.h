@@ -32,7 +32,7 @@ typedef struct data {
 } data_t;
 
 data_t* segment_init(problem_t*, config_t*, segment_t*);
-int segment_burn(data_t*, int64_t);
+int64_t segment_burn(data_t*, int64_t);
 void segment_finalize(data_t*);
 
 // internal objects exposed for benchmarking

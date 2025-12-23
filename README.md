@@ -19,3 +19,9 @@ mpirun -n $NUM_PROCESSORS -- out/burn_hydra --iterations $ITERATIONS --config '8
 The configuration string heavily impacts performance, so consider tuning it carefully. It is a comma-separated list of hyphen-separated tuples corresponding to the log-size of the blocks of integers each processor will be assigned.
 For example, the string above tells the first processor to handle integer blocks of 2^8 bits and 2^18 bits, the next processor to handle blocks of 2^18 bits and 2^20 bits, and so on. The last section after the `/` tells each processors 7 and onwards to handle 3 blocks of 2^28 bits each.
 
+## Utilities
+
+Along with `burn_hydra` there are a couple extra utilities:
+- `bench`: Some benchmarks/tests for the common operations.
+- `latencies`: A tool that outputs a latency matrix, in case your cluster has non-uniform latencies.
+
