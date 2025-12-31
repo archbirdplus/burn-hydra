@@ -1,7 +1,5 @@
 #include <mpi.h>
 
-#include "friendly_assert.h"
-
 #include "latencies.h"
 
 int main() {
