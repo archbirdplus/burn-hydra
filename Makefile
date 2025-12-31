@@ -1,11 +1,11 @@
 
 
-SOURCES=src/segment_burn.cpp src/segment_setups.cpp src/segment_results.cpp src/communicate.cpp src/metrics.cpp src/parse.cpp src/friendly_assert.cpp src/fluent.cpp src/state/init.cpp
+SOURCES=src/communicate.cpp src/metrics.cpp src/parse.cpp src/friendly_assert.cpp src/fluent.cpp src/state/init.cpp
 BURN_SOURCES=src/burn_hydra.cpp
 LATENCY_SOURCES=src/latencies_main.cpp src/latencies.cpp
 BENCH_SOURCES=src/bench.cpp
 TEST_SOURCES=src/test.cpp src/latencies.cpp
-HEADERS=include/common.h include/segment.h include/communicate.h include/metrics.h include/parse.h include/latencies.h include/fluent.h include/state.h
+HEADERS=include/communicate.h include/metrics.h include/parse.h include/latencies.h include/fluent.h include/state.h
 
 MPICC?=mpic++
 CFLAGS+=-std=c++17 -lstdc++ -L/opt/homebrew/Cellar/flint/3.3.1/lib -L/opt/homebrew/Cellar/gmp/6.3.0/lib -I/opt/homebrew/Cellar/flint/3.3.1/include -I/opt/homebrew/Cellar/gmp/6.3.0/include -lflint -lgmp -I include -Wall -Wextra
