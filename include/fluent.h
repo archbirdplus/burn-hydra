@@ -35,9 +35,10 @@ public:
 
     Setup consistent_collatz(int64_t r, int64_t m, vec<int64_t> J);
     Setup set_initial(int64_t r);
+    Setup set_iterations(int64_t r);
 
     Setup do_prune(bool prune);
-    Setup steps(int64_t n);
+    // Setup basecase_stepsize(int64_t n); // TODO: may it be non-2exp? interacts with block sizes
 
     Setup scan_fn(scan_fn_t fn, uint64_t block_size, bool memoize);
     Setup scan_context(void*);
