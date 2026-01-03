@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.30)
 set(CMAKE_CXX_STANDARD 17)
 
 if(NOT DEFINED CMAKE_CXX_COMPILER)
-    set(CMAKE_CXX_COMPILER, "mpic++ -v")
+    set(CMAKE_CXX_COMPILER, "mpic++")
 endif()
 
 if(NOT DEFINED FLINT_PATH)

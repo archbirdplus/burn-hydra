@@ -31,7 +31,7 @@ public:
 
     opt<scan_config_t> scan_config;
 
-    Task(Setup setup);
+    Task(const Setup* setup);
 };
 
 // Acceleration structures for a task.
@@ -49,7 +49,7 @@ public:
     // table index -> user object
     vec<uint64_t> scan_object_from_index;
 
-    Workspace(Setup setup, Task task);
+    Workspace(const Setup* setup, const Task task);
 };
 
 // Context handles the memory needed at the time of execution: a task and its structures.
@@ -60,7 +60,7 @@ public:
     Workspace workspace;
     Metrics metrics;
 
-    Context(Setup setup); // init from problem statement
+    Context(const Setup* setup); // init from problem statement
 
     void run();
 };

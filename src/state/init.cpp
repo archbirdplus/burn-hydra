@@ -53,43 +53,45 @@ T* create_basecase_table(collatz_function_t g, uint64_t n) {
     return table;
 }
 
-Task::Task(Setup setup) {
+Task::Task(const Setup* setup) {
     bool error = false;
     bool* e = &error;
-    checkpoint_interval = setup.checkpoint_interval;
-    if(setup.collatz.has_value()) collatz = *setup.collatz;
+    checkpoint_interval = setup->checkpoint_interval;
+    if(setup->collatz.has_value()) collatz = *setup->collatz;
     else friendly_concern(e, false, "Missing setup: collatz function");
-    if(setup.initial.has_value()) initial = *setup.initial;
+    if(setup->initial.has_value()) initial = *setup->initial;
     else friendly_concern(e, false, "Missing setup: initial value");
-    if(setup.max_iterations.has_value()) max_iterations = *setup.max_iterations;
+    if(setup->max_iterations.has_value()) max_iterations = *setup->max_iterations;
     else friendly_concern(e, false, "Missing setup: max iterations");
-    if(setup.max_iterations.has_value()) table_size = *setup.table_size;
+    if(setup->max_iterations.has_value()) table_size = *setup->table_size;
     else friendly_concern(e, false, "Missing setup: table size");
 
+    // This seems to work outside an MPI context; world_size would simply be 1.
     ensure_MPI_init();
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
     // TODO: automatically configure block sizes based on problem size, node count
     // TODO: check valid block sizes
-    if(setup.block_sizes_ramp.has_value()) {
-        vecvec<uint64_t> ramp = *setup.block_sizes_ramp;
+    if(setup->block_sizes_ramp.has_value()) {
+        vecvec<uint64_t> ramp = *setup->block_sizes_ramp;
         block_sizes = ramp;
-        if(world_size > block_sizes.size() && setup.block_sizes_plat.has_value()) {
-            vecvec<uint64_t> plat = *setup.block_sizes_plat;
-            int ramp_size = ramp.size();
-            int plat_size = plat.size();
-            for(int i = ramp_size; i < world_size; i++) {
-                block_sizes.push_back(plat[(i - ramp_size) % plat_size]);
-            }
-        } else friendly_concern(e, false, "Missing setup: block sizes plateau");
+        if(world_size > block_sizes.size()) {
+            if(setup->block_sizes_plat.has_value()) {
+                vecvec<uint64_t> plat = *setup->block_sizes_plat;
+                int ramp_size = ramp.size();
+                int plat_size = plat.size();
+                for(int i = ramp_size; i < world_size; i++) {
+                    block_sizes.push_back(plat[(i - ramp_size) % plat_size]);
+                }
+            } else friendly_concern(e, false, "Missing setup: block sizes plateau");
+        }
     } else friendly_concern(e, false, "Missing setup: block sizes");
 
-    flint_threads = setup.flint_threads.value_or(1);
-    scan_config = setup.scan_config;
+    flint_threads = setup->flint_threads.value_or(1);
+    scan_config = setup->scan_config;
 
-    if(e) {
-        // return std::nullopt;
+    if(error) {
         throw std::runtime_error("Configuration is missing information");
     }
 }
@@ -110,7 +112,7 @@ vec<fmpz> create_2exp_powers(uint64_t r, uint64_t n) {
     return pR;
 }
 
-Workspace::Workspace(Setup setup, Task task) {
+Workspace::Workspace(const Setup* setup, const Task task) {
     vec<uint64_t> my_blocks = task.block_sizes[task.world_rank];
     uint64_t largest_size = std::max_element(my_blocks.begin(), my_blocks.end())[0];
     pR = create_2exp_powers(task.collatz.r, largest_size);
@@ -120,10 +122,11 @@ Workspace::Workspace(Setup setup, Task task) {
 }
 
 // TODO: really nasty constructor
-Context::Context(Setup setup) : task(setup), workspace(setup, task), metrics(true) { }
+Context::Context(const Setup* setup) : task(setup), workspace(setup, task), metrics(true) { }
 
 void Context::run() {
     // TODO: aggressive specialization for:
     // base-2 r/m, thread/node counts, table size/type, scan styles
+    throw std::runtime_error("Context::run is not actually implemented");
 }
 
