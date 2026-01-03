@@ -11,6 +11,8 @@
 
 #include "metrics.h"
 
+class Setup;
+
 // A fully specified Collatz task to be computed.
 class Task {
 public:

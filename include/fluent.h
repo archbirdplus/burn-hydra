@@ -3,9 +3,10 @@
 #ifndef FLUENT_H
 #define FLUENT_H
 
+#include "state.h"
 #include "types.h"
 
-class State;
+class Context;
 
 // Setup stores the information about a computation before it is executed.
 class Setup {
@@ -47,7 +48,7 @@ public:
     Setup scan_context(void*);
 
     bool check() const;
-    State init() const;
+    Context init() const;
 };
 
 
