@@ -9,7 +9,8 @@
 #include "types.h"
 #include "fluent.h"
 
-class MetaState {
+// A fully specified Collatz task to be computed.
+class Task {
 public:
     collatz_function_t collatz;
     int64_t initial;
@@ -26,9 +27,10 @@ public:
 
     opt<scan_config_t> scan_config;
 
-    MetaState(Setup setup);
+    Task(Setup setup);
 };
 
+// Acceleration structures for a task.
 class Workspace {
 public:
     vec<fmpz> pR;
@@ -43,18 +45,17 @@ public:
     // table index -> user object
     vec<uint64_t> scan_object_from_index;
 
-    Workspace(Setup setup, MetaState meta);
+    Workspace(Setup setup, Task task);
 };
 
-// State handles the memory needed at the time of execution.
-class State {
+// Context handles the memory needed at the time of execution: a task and its structures.
+class Context {
 private:
 public:
-    // Setup setup; // TODO: likely not needed
-    MetaState meta;
+    Task task;
     Workspace workspace;
 
-    State(Setup setup); // init from problem statement
+    Context(Setup setup); // init from problem statement
 
     void run();
 };

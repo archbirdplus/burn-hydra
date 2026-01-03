@@ -53,7 +53,7 @@ T* create_basecase_table(collatz_function_t g, uint64_t n) {
     return table;
 }
 
-MetaState::MetaState(Setup setup) {
+Task::Task(Setup setup) {
     bool error = false;
     bool* e = &error;
     checkpoint_interval = setup.checkpoint_interval;
@@ -110,19 +110,19 @@ vec<fmpz> create_2exp_powers(uint64_t r, uint64_t n) {
     return pR;
 }
 
-Workspace::Workspace(Setup setup, MetaState meta) {
-    vec<uint64_t> my_blocks = meta.block_sizes[meta.world_rank];
+Workspace::Workspace(Setup setup, Task task) {
+    vec<uint64_t> my_blocks = task.block_sizes[task.world_rank];
     uint64_t largest_size = std::max_element(my_blocks.begin(), my_blocks.end())[0];
-    pR = create_2exp_powers(meta.collatz.r, largest_size);
-    pM = create_2exp_powers(meta.collatz.m, largest_size);
+    pR = create_2exp_powers(task.collatz.r, largest_size);
+    pM = create_2exp_powers(task.collatz.m, largest_size);
     // TODO: automatically configure table size
-    basecase_table = create_basecase_table<uint64_t>(meta.collatz, meta.table_size);
+    basecase_table = create_basecase_table<uint64_t>(task.collatz, task.table_size);
 }
 
 // TODO: really nasty constructor
-State::State(Setup setup) : meta(setup), workspace(setup, meta) { }
+Context::Context(Setup setup) : task(setup), workspace(setup, task) { }
 
-void State::run() {
+void Context::run() {
     // TODO: aggressive specialization for:
     // base-2 r/m, thread/node counts, table size/type, scan styles
 }
