@@ -3,23 +3,26 @@
 #ifndef FLUENT_H
 #define FLUENT_H
 
-#include "state.h"
+#include "types.h"
+
+class State;
 
 // Setup stores the information about a computation before it is executed.
 class Setup {
-private:
+public:
     opt<collatz_function_t> collatz;
     opt<int64_t> initial;
-    opt<int64_t> iterations;
+    opt<int64_t> max_iterations;
     opt<int64_t> checkpoint_interval;
     opt<bool> prune;
 
+    opt<uint64_t> table_size;
     opt<vecvec<uint64_t>> block_sizes_ramp;
     opt<vecvec<uint64_t>> block_sizes_plat;
     opt<int> flint_threads;
 
     opt<scan_config_t> scan_config;
-public:
+
     Setup(); // init with no defaults
     // common creatures
     static Setup hydra();

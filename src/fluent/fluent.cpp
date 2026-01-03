@@ -1,9 +1,10 @@
 #include "mpi.h"
+#include "state.h"
 #include "fluent.h"
 #include "friendly_assert.h"
 
 bool Setup::check() const {
-    return initial && iterations && checkpoint_interval && prune && block_sizes_ramp && block_sizes_plat && flint_threads && scan_config;
+    return initial && max_iterations && checkpoint_interval && prune && block_sizes_ramp && block_sizes_plat && flint_threads && scan_config;
 }
 
 void test_optional_chain() {
