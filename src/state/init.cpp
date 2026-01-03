@@ -120,7 +120,7 @@ Workspace::Workspace(Setup setup, Task task) {
 }
 
 // TODO: really nasty constructor
-Context::Context(Setup setup) : task(setup), workspace(setup, task) { }
+Context::Context(Setup setup) : task(setup), workspace(setup, task), metrics(true) { }
 
 void Context::run() {
     // TODO: aggressive specialization for:

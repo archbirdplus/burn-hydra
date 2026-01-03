@@ -4,19 +4,19 @@
 
 #include <gmp.h>
 #include <flint/fmpz.h>
-#include "common.h"
-#include "segment.h"
 
-void send(metrics_t*, int, int, fmpz_t);
-void recv(metrics_t*, int, int, fmpz_t);
+#include <state.h>
+
+void send(Metrics*, int, int, fmpz_t);
+void recv(Metrics*, int, int, fmpz_t);
 
 // might eventually need to pass a shift along with it
-void sendLeft(data_t*, fmpz_t);
-void receiveLeft(data_t*, fmpz_t);
-void sendRight(data_t*, fmpz_t);
-void receiveRight(data_t*, fmpz_t);
+void sendLeft(Context*, fmpz_t);
+void receiveLeft(Context*, fmpz_t);
+void sendRight(Context*, fmpz_t);
+void receiveRight(Context*, fmpz_t);
 
-void gather(data_t*, fmpz_t, fmpz*, int);
+void gather(Context*, fmpz_t, fmpz*, int);
 
 #endif // COMMUNICATE_H
 

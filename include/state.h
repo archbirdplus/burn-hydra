@@ -9,6 +9,8 @@
 #include "types.h"
 #include "fluent.h"
 
+#include "metrics.h"
+
 // A fully specified Collatz task to be computed.
 class Task {
 public:
@@ -54,6 +56,7 @@ private:
 public:
     Task task;
     Workspace workspace;
+    Metrics metrics;
 
     Context(Setup setup); // init from problem statement
 
