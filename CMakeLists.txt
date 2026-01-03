@@ -30,7 +30,7 @@ endif()
 
 project(BurnHydra)
 
-add_library(BigCollatz)
+add_library(BigCollatz SHARED)
 
 target_sources(BigCollatz
     PRIVATE
@@ -42,6 +42,10 @@ target_sources(BigCollatz
     FILE_SET HEADERS
     BASE_DIRS include
     FILES include/fluent.h include/state.h
+)
+
+target_link_directories(BigCollatz
+    PUBLIC ${FLINT_PATH}/lib ${GMP_PATH}/lib ${MPI_PATH}/lib
 )
 
 target_include_directories(BigCollatz
@@ -57,6 +61,11 @@ add_executable(burn_hydra)
 target_sources(burn_hydra
     PRIVATE
     src/apps/burn_hydra.cpp
+)
+
+target_include_directories(burn_hydra
+    PRIVATE
+    ${FLINT_PATH}/include ${GMP_PATH}/include ${MPI_PATH}/include
 )
 
 target_link_libraries(burn_hydra
