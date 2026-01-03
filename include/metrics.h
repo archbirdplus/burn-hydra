@@ -4,7 +4,6 @@
 #include <chrono>
 #include <optional>
 #include <vector>
-#include "common.h"
 
 enum timer_class {
     initializing,
@@ -52,22 +51,23 @@ typedef struct counters {
     uint64_t counter[_counter_classes];
 } counters_t;
 
-typedef struct metrics {
-    timers_t timers;
-    counters_t counters;
-} metrics_t;
-
 start_time_t nanos();
 double seconds(std::chrono::nanoseconds);
 
-void init_metrics(metrics_t*, bool);
+class Metrics {
+public:
+    timers_t timers;
+    counters_t counters;
 
-void timer_start(metrics_t*, timer_class);
-void timer_stop(metrics_t*, timer_class);
+    Metrics(bool full_logs);
 
-void counter_count(metrics_t*, counter_class);
+    void start_timer(timer_class);
+    void stop_timer(timer_class);
 
-void dump_metrics(metrics_t*, int);
+    void count(counter_class);
+
+    void dump_as_rank(int rank);
+};
 
 #endif // METRICS_H
 

@@ -43,14 +43,12 @@ double seconds(std::chrono::nanoseconds time) {
     return seconds.count();
 }
 
-void init_metrics(metrics_t* metrics, bool full_logs) {
-    // for some reason malloc here is _really_ bad, and puts
-    // a brk instead of this whole function specifically in -O2
+Metrics::Metrics(bool full_logs) {
     for (int i = 0; i < _timer_classes; i++) {
-        metrics->timers.total[i] = std::chrono::nanoseconds::zero();
-        metrics->timers.last_start[i] = std::nullopt;
+        this->timers.total[i] = std::chrono::nanoseconds::zero();
+        this->timers.last_start[i] = std::nullopt;
     }
-    timers_t* timers = &metrics->timers;
+    timers_t* timers = &this->timers;
     for (int i = 0; i < _timer_classes; i++) {
         timers->intervals[i] = std::nullopt;
     }
@@ -68,30 +66,30 @@ void init_metrics(metrics_t* metrics, bool full_logs) {
     #else
     (void)full_logs;
     #endif
-    // the rest are zero-initialized
+    // the rest should be zero-initialized
 }
 
-void timer_start(metrics_t* metrics, timer_class t) {
-    if (auto start = metrics->timers.last_start[t]) {
+void Metrics::start_timer(timer_class t) {
+    if (auto start = timers.last_start[t]) {
         std::cout << "ouch: Timer was started twice." << std::endl;
         assert(false);
     } else {
-        metrics->timers.last_start[t] = hydra_clock::now();
+        timers.last_start[t] = hydra_clock::now();
     }
 }
 
-void timer_stop(metrics_t* metrics, timer_class t) {
-    if (auto start = metrics->timers.last_start[t]) {
+void Metrics::stop_timer(timer_class t) {
+    if (auto start = timers.last_start[t]) {
         const auto stop = hydra_clock::now();
         const auto delta = stop - *start;
         if (delta < std::chrono::nanoseconds::zero()) {
             std::cout << "ouch: Experienced time travel: " << delta.count() << " ns time elapased." << std::endl;
         }
-        metrics->timers.total[t] += delta;
-        metrics->timers.last_start[t] = std::nullopt;
+        timers.total[t] += delta;
+        timers.last_start[t] = std::nullopt;
         #ifndef NO_PLOT_LOGS
-        if (metrics->timers.intervals[t] != std::nullopt) {
-            metrics->timers.intervals[t].value().push_back({*start, stop});
+        if (timers.intervals[t] != std::nullopt) {
+            timers.intervals[t].value().push_back({*start, stop});
         }
         #endif
     } else {
@@ -100,40 +98,40 @@ void timer_stop(metrics_t* metrics, timer_class t) {
     }
 }
 
-void counter_count(metrics_t* metrics, counter_class t) {
-    metrics->counters.counter[t] += 1;
+void Metrics::count(counter_class t) {
+    counters.counter[t] += 1;
 }
 
-void dump_metrics(metrics_t* metrics, int rank) {
+void Metrics::dump_as_rank(int rank) {
     std::string filename {"rank"};
     filename.append(std::to_string(rank));
     filename.append(".json");
     std::fstream f {filename, std::ios::out};
     std::cout << "Some metrics were tracked:" << std::endl;
     for (int t = 0; t < _timer_classes; t++) {
-        const auto time = metrics->timers.total[t];
+        const auto time = timers.total[t];
         std::chrono::duration<double> seconds = time;
         std::cout << "\t" << seconds.count() << " s spent " << timer_class_names[t] << "." << std::endl;
     }
     for (int i = 0; i < _counter_classes; i++) {
-        const auto counts = metrics->counters.counter[i];
+        const auto counts = counters.counter[i];
         std::cout << "\t" << counts << " " << counter_class_names[i] << "." << std::endl;
     }
     #ifndef NO_PLOT_LOGS
     // do a bit of json
     // { "timer_class_a": [[start, stop], [start, stop]...], ... }
-    if (metrics->timers.intervals[initializing] == std::nullopt) {
+    if (timers.intervals[initializing] == std::nullopt) {
         std::cout << "init timer is nullopt, skipping file write" << std::endl;
         return;
     }
     std::cout << "Dumping json timer intervals." << std::endl;
-    const start_time_t first_start = (*metrics->timers.intervals[active_time])[0].start;
+    const start_time_t first_start = (*timers.intervals[active_time])[0].start;
     if (rank > 0) {
         f << ",";
     }
     f << "\"rank " << rank << "\": {";
     for (int t = 0; t < _timer_classes; t++) {
-        if (std::optional<std::vector<start_stop_t>> intervals = metrics->timers.intervals[t]) {
+        if (std::optional<std::vector<start_stop_t>> intervals = timers.intervals[t]) {
             if (t > 0) {
                 f << ",";
             }
