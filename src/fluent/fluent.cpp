@@ -4,12 +4,8 @@
 #include "friendly_assert.h"
 
 Setup::Setup() {
-    // everything null?
+    // everything null
 }
-
-    // common creatures
-    // static Setup hydra();
-    // static Setup bigfoot();
 
 Setup Setup::clone() const {
     Setup setup = Setup();
