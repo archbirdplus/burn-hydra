@@ -1,6 +1,4 @@
-
-#ifndef COMMUNICATE_H
-#define COMMUNICATE_H
+#pragma once
 
 #include <gmp.h>
 #include <flint/fmpz.h>
@@ -17,6 +15,4 @@ void sendRight(Context*, fmpz_t);
 void receiveRight(Context*, fmpz_t);
 
 void gather(Context*, fmpz_t, fmpz*, int);
-
-#endif // COMMUNICATE_H
 

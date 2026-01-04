@@ -1,5 +1,4 @@
-#ifndef STATE_H
-#define STATE_H
+#pragma once
 
 #include <vector>
 #include <cstdint>
@@ -64,6 +63,4 @@ public:
 
     void run();
 };
-
-#endif // STATE_H
 

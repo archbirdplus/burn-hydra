@@ -1,5 +1,4 @@
-#ifndef METRICS_H
-#define METRICS_H
+#pragma once
 
 #include <chrono>
 #include <optional>
@@ -68,6 +67,4 @@ public:
 
     void dump_as_rank(int rank);
 };
-
-#endif // METRICS_H
 

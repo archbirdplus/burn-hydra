@@ -1,5 +1,4 @@
-#ifndef FRIENDLY_ASSERT_H
-#define FRIENDLY_ASSERT_H
+#pragma once
 
 #include <iostream>
 
@@ -14,4 +13,3 @@ template<typename T> void friendly_concern_equal(bool* anyerror, T a, T b, const
     }
 }
 
-#endif // FRIENDLY_ASSERT_H

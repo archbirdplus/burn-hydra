@@ -1,7 +1,6 @@
 // Fluent C++ wrapper API
 
-#ifndef FLUENT_H
-#define FLUENT_H
+#pragma once
 
 #include "state.h"
 #include "types.h"
@@ -57,4 +56,3 @@ public:
 
 void test_fluent();
 
-#endif // FLUENT_H

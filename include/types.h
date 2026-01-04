@@ -1,5 +1,4 @@
-#ifndef TYPES_H
-#define TYPES_H
+#pragma once
 
 #include <vector>
 #include <optional>
@@ -29,6 +28,4 @@ typedef struct collatz_function {
     int64_t m;
     vec<int64_t> J;
 } collatz_function_t;
-
-#endif // TYPES_H
 

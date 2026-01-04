@@ -2,10 +2,10 @@
 #include "flint/ulong_extras.h"
 
 #include <algorithm>
+#include <limits>
 
 #include "state.h"
 #include "friendly_assert.h"
-#include <limits>
 
 void ensure_MPI_init() {
     int flag;

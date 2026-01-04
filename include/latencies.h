@@ -1,5 +1,4 @@
-#ifndef LATENCIES_H
-#define LATENCIES_H
+#pragma once
 
 #include <vector>
 
@@ -25,6 +24,4 @@ typedef struct latency_matrix {
 void test_get_opponent();
 vec<latency_matrix_t> gather_stats(latencies_config_t* config, int rank, int world_size);
 void print_stats(latencies_config_t* config, int world_rank, int world_size, vec<latency_matrix_t> stats);
-
-#endif // LATENCIES_H
 
