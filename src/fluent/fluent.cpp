@@ -162,12 +162,13 @@ void test_Setup_scan_orders() {
     ctx = (void*) 456;
     s.scan_context(ctx);
     friendly_concern_equal(&e, s.scan_config->scan_fn, f, "scan_fn got replaced incorrectly");
-    friendly_concern_equal(&e, s.scan_config->scan_context, ctx, "scan_context not set correctly");
+    friendly_concern_equal(&e, s.scan_config->scan_context, ctx, "scan_context not updated correctly");
     if (e) { exit(1); }
 }
 
 void test_fluent() {
     test_optional_chain();
     test_Setup_null();
+    test_Setup_scan_orders();
 }
 

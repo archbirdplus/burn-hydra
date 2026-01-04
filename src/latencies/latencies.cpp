@@ -6,9 +6,7 @@
 #include <vector>
 #include <cmath>
 
-#include "common.h"
 #include "communicate.h"
-#include "segment.h"
 #include "metrics.h"
 #include "friendly_assert.h"
 #include "latencies.h"

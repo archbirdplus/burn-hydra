@@ -29,7 +29,22 @@ if(FAILED_DEPS)
 endif()
 
 project(BurnHydra)
+include(CTest)
 
+function(equip target)
+    target_link_directories(${target}
+        PUBLIC ${FLINT_PATH}/lib ${GMP_PATH}/lib ${MPI_PATH}/lib
+    )
+    target_include_directories(${target}
+        PRIVATE
+        ${FLINT_PATH}/include ${GMP_PATH}/include ${MPI_PATH}/include
+    )
+    target_link_libraries(${target}
+        flint gmp mpi
+    )
+endfunction()
+
+# BigCollatz library
 add_library(BigCollatz SHARED)
 
 target_sources(BigCollatz
@@ -44,19 +59,29 @@ target_sources(BigCollatz
     FILES include/fluent.h include/state.h
 )
 
-target_link_directories(BigCollatz
-    PUBLIC ${FLINT_PATH}/lib ${GMP_PATH}/lib ${MPI_PATH}/lib
-)
+equip(BigCollatz)
 
-target_include_directories(BigCollatz
+# test cases
+add_executable(manual_test)
+target_sources(manual_test
     PRIVATE
-    ${FLINT_PATH}/include ${GMP_PATH}/include ${MPI_PATH}/include
+    src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
+    src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
+    include/communicate.h include/friendly_assert.h include/parse.h
+    include/fluent.h include/state.h
+    # src/latencies/latencies.cpp
+
+    src/test/test.cpp
+    PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS include
 )
 
-target_link_libraries(BigCollatz
-    flint gmp mpi
-)
+equip(manual_test)
 
+add_test(NAME ctest COMMAND manual_test)
+
+# burn_hydra demo
 add_executable(burn_hydra)
 target_sources(burn_hydra
     PRIVATE
