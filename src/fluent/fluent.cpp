@@ -111,6 +111,8 @@ Setup& Setup::scan_context(void* context) {
             .scan_block_size = 0,
             .scan_memoize = false,
         };
+    } else {
+        this->scan_config->scan_context = context;
     }
     return *this;
 }
