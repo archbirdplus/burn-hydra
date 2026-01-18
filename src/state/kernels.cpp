@@ -42,6 +42,7 @@ Burner_MPI::Burner_MPI(Context* global_ctx) {
         global_ctx->task.block_sizes[world_rank-1].back() :
         scales.front(); // TODO: this depends on the power of the basecase
     node_context = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(global_ctx, this, scales, next_scale));
+    basecase_context = std::unique_ptr<Burner_basecase>(new Burner_basecase(global_ctx));
 }
 
 Burner_MPI::~Burner_MPI() {
