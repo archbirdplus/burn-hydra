@@ -36,8 +36,7 @@ void Burner_basecase::step(fmpz* x_import, fmpz* x_export) {
         // TODO: 2exp optimizations
     }
     fmpz_add(storage, storage, x_import);
-    fmpz_fdiv_q_2exp(x_export, storage, n);
-    fmpz_fdiv_r_2exp(storage, storage, n);
+    fmpz_fdiv_qr(x_export, storage, storage, &(global_ctx->workspace.pM[power]));
 }
 
 Burner_MPI::Burner_MPI(Context* global_ctx) {
