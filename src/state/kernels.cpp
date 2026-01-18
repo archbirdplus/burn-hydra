@@ -8,6 +8,7 @@ Burner_basecase::Burner_basecase(Context* ctx) {
     global_ctx = ctx;
     power = ctx->task.block_sizes.front().front();
     fmpz_init_set_ui(storage, ctx->task.initial);
+    user_object = 0; // TODO: what should this be initially?
 }
 
 // Takes import and writes to export.
@@ -15,12 +16,23 @@ void Burner_basecase::step(fmpz* x_import, fmpz* x_export) {
     uint64_t n = (uint64_t) 1 << power;
     uint64_t r = global_ctx->task.collatz.r;
     uint64_t m = global_ctx->task.collatz.m;
+
+    scan_fn_t scan_fn = nullptr;
+    void* scan_context = nullptr;
+    if (global_ctx->task.scan_config) {
+        auto config = *(global_ctx->task.scan_config);
+        scan_fn = config.scan_fn;
+        scan_context = config.scan_context;
+    }
     for (uint64_t i = 0; i < n; i++) {
         fmpz_mul_ui(storage, storage, r);
         fmpz_fdiv_q_ui(storage, storage, m);
         uint64_t residue = fmpz_fdiv_ui(storage, m);
-        // TODO: iterate user scan
+        if (scan_fn) {
+            user_object = scan_fn(scan_context, user_object, residue);
+        }
         // TODO: table steps
+        // TODO: user scan memoization
         // TODO: 2exp optimizations
     }
     fmpz_add(storage, storage, x_import);
@@ -60,6 +72,7 @@ void Burner_MPI::syncR(fmpz* x_export, fmpz* x_import) {
 
 void Burner_MPI::syncL(fmpz* x_export, fmpz* x_import) {
     if (world_rank == world_size - 1) {
+        // TODO: this needs a multiplication to happen correctly
         fmpz_swap(x_import, x_export);
     } else {
         receiveLeft(global_context, x_import);

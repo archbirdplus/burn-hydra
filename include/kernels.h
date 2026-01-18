@@ -11,6 +11,7 @@ public:
     uint32_t power;
 
     fmpz_t storage;
+    user_object_t user_object;
 
     Burner_basecase(Context*);
 
