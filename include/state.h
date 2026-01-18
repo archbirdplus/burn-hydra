@@ -47,7 +47,7 @@ public:
     // table index -> user object
     vec<uint64_t> scan_object_from_index;
 
-    Workspace(const Setup* setup, const Task task);
+    Workspace(const Task task);
 };
 
 // Context handles the memory needed at the time of execution: a task and its structures.

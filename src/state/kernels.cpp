@@ -39,7 +39,7 @@ Burner_MPI::Burner_MPI(Context* global_ctx) {
         scales.push_back(static_cast<uint32_t>(global_ctx->task.block_sizes[world_rank][i]));
     }
     uint32_t next_scale = world_rank > 0 ?
-        global_ctx->task.block_sizes[world_rank-1].back() : 
+        global_ctx->task.block_sizes[world_rank-1].back() :
         scales.front(); // TODO: this depends on the power of the basecase
     node_context = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(global_ctx, this, scales, next_scale));
 }
@@ -132,7 +132,7 @@ void Burner_singlethreaded::recurse(int64_t n) {
     }
     if (upper_context->can_push_left) {
         syncL(n);
-        if (n == length-1)
+        if ((uint64_t) n == length-1)
             upper_context->syncL(&overcarry[length], &undercarry[length]);
     }
 }

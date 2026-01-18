@@ -41,7 +41,6 @@ T* create_basecase_table(collatz_function_t g, uint64_t n) {
         for (uint64_t i = 0; i < n; i++) {
             fmpz_fdiv_qr(x, rem, x, m);
             uint64_t rem_ui = fmpz_get_ui(rem);
-            int64_t j = g.J[rem_ui];
             fmpz_mul_si(x, x, g.r);
             fmpz_add_si(x, x, g.J[rem_ui]);
         }
@@ -79,7 +78,7 @@ Task::Task(const Setup* setup) {
     if(setup->block_sizes_ramp.has_value()) {
         vecvec<uint64_t> ramp = *setup->block_sizes_ramp;
         block_sizes = ramp;
-        if(world_size > block_sizes.size()) {
+        if((uint64_t)world_size > block_sizes.size()) {
             if(setup->block_sizes_plat.has_value()) {
                 vecvec<uint64_t> plat = *setup->block_sizes_plat;
                 int ramp_size = ramp.size();
@@ -115,7 +114,7 @@ vec<fmpz> create_2exp_powers(uint64_t r, uint64_t n) {
     return pR;
 }
 
-Workspace::Workspace(const Setup* setup, const Task task) {
+Workspace::Workspace(const Task task) {
     vec<uint64_t> my_blocks = task.block_sizes[task.world_rank];
     uint64_t largest_size = std::max_element(my_blocks.begin(), my_blocks.end())[0];
     pR = create_2exp_powers(task.collatz.r, largest_size);
@@ -125,7 +124,7 @@ Workspace::Workspace(const Setup* setup, const Task task) {
 }
 
 // TODO: really nasty constructor
-Context::Context(const Setup* setup) : task(setup), workspace(setup, task), metrics(true) {
+Context::Context(const Setup* setup) : task(setup), workspace(task), metrics(true) {
     
 }
 

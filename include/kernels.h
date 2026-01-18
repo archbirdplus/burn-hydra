@@ -23,7 +23,7 @@ class Burner_singlethreaded {
 public:
     Context* global_context;
     Burner_MPI* upper_context;
-    int64_t length;
+    uint64_t length;
     vec<uint32_t> scale_delta;
     vec<uint32_t> scale_next;
     vec<uint32_t> scale_self;
