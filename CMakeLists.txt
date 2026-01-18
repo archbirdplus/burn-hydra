@@ -51,6 +51,7 @@ target_sources(BigCollatz
     PRIVATE
     src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
     src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
+    src/state/kernels.cpp
     include/communicate.h include/friendly_assert.h include/parse.h
 
     PUBLIC
@@ -67,6 +68,7 @@ target_sources(manual_test
     PRIVATE
     src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
     src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
+    src/state/kernels.cpp
     include/communicate.h include/friendly_assert.h include/parse.h
     include/fluent.h include/state.h
     # src/latencies/latencies.cpp

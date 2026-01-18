@@ -6,6 +6,9 @@
 
 #include "state.h"
 #include "friendly_assert.h"
+#include <cassert>
+
+#include "kernels.h"
 
 void ensure_MPI_init() {
     int flag;
@@ -122,11 +125,28 @@ Workspace::Workspace(const Setup* setup, const Task task) {
 }
 
 // TODO: really nasty constructor
-Context::Context(const Setup* setup) : task(setup), workspace(setup, task), metrics(true) { }
+Context::Context(const Setup* setup) : task(setup), workspace(setup, task), metrics(true) {
+    
+}
 
 void Context::run() {
     // TODO: aggressive specialization for:
     // base-2 r/m, thread/node counts, table size/type, scan styles
-    throw std::runtime_error("Context::run is not actually implemented");
+
+
+    // possibly something like this?
+    // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
+    // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
+    Burner_MPI burner = Burner_MPI(this);
+    uint64_t iterations = this->task.max_iterations;
+    while (iterations > 0) {
+        uint64_t taken = burner.step();
+        if (iterations < taken) {
+             throw std::runtime_error("Internal error: took too many steps");
+        }
+        iterations -= taken;
+    }
+
+    // TODO: summarize (if -v) or output results/statistics
 }
 

@@ -38,7 +38,6 @@ class Workspace {
 public:
     vec<fmpz> pR;
     vec<fmpz> pM;
-    vec<fmpz> stored;
     void* basecase_table;
 
     // Table memoizing g^n in terms of indices

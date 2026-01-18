@@ -3,7 +3,7 @@
 #include <gmp.h>
 #include <flint/fmpz.h>
 
-#include <state.h>
+#include "state.h"
 
 void send(Metrics*, int, int, fmpz_t);
 void recv(Metrics*, int, int, fmpz_t);
