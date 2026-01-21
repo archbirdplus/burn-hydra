@@ -8,6 +8,8 @@ typedef struct count_context {
 
 user_object_t count_parities(void* context, user_object_t x, uint64_t residue) {
     const auto ctx = (count_context_t*) context;
+    uint64_t cur_count = ctx->even+ctx->odd+1;
+    std::cout << cur_count << " -> parity " << residue << std::endl;
     if (residue & 1) {
         ctx->odd += 1;
     } else {
@@ -21,15 +23,15 @@ int main() {
     scan_fn_t count_fn = &count_parities;
     count_context_t ctx = { .even=0, .odd=0 };
 
-    uint64_t iterations = 1e9;
+    uint64_t iterations = 1<<12;
     auto s = Setup()
-        .block_sizes({{8,18},{18,19},{19,20},{20,21}},{{21,21,21}})
+        .block_sizes({{8,11}}, {})//,{18,19},{19,20},{20,21}},{{21,21,21}})
         .set_flint_threads(4)
         .do_prune(true)
         .set_iterations(iterations)
         .from_argv()
         .consistent_collatz(3, 2, {0, 0})
-        .set_initial(10)
+        .set_initial(3)
         .scan_fn(count_fn, 1, false)
         .scan_context(&ctx);
     s.init().run();

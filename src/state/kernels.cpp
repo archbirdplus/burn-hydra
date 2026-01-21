@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "state.h"
 #include "kernels.h"
 
@@ -25,12 +27,12 @@ void Burner_basecase::step(fmpz* x_import, fmpz* x_export) {
         scan_context = config.scan_context;
     }
     for (uint64_t i = 0; i < n; i++) {
-        fmpz_mul_ui(storage, storage, r);
-        fmpz_fdiv_q_ui(storage, storage, m);
         uint64_t residue = fmpz_fdiv_ui(storage, m);
         if (scan_fn) {
             user_object = scan_fn(scan_context, user_object, residue);
         }
+        fmpz_mul_ui(storage, storage, r);
+        fmpz_fdiv_q_ui(storage, storage, m);
         // TODO: table steps
         // TODO: user scan memoization
         // TODO: 2exp optimizations
@@ -46,7 +48,7 @@ Burner_MPI::Burner_MPI(Context* global_ctx) {
     can_push_left = world_rank != world_size - 1;
     can_push_right = world_rank != 0;
     vec<uint32_t> scales = {};
-    for (uint64_t i = 0; i < global_ctx->task.block_sizes.size(); i++) {
+    for (uint64_t i = 0; i < global_ctx->task.block_sizes[world_rank].size(); i++) {
         scales.push_back(static_cast<uint32_t>(global_ctx->task.block_sizes[world_rank][i]));
     }
     uint32_t next_scale = world_rank > 0 ?
@@ -98,13 +100,13 @@ Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, Burner_MPI* up
     overcarry = {};
     for (uint64_t i = 0; i < length; i++) {
         storage.push_back(0);
-        fmpz_init(&storage[i]);
+        fmpz_init_set_ui(&storage[i], 0);
     }
     for (uint64_t i = 0; i < length+1; i++) {
         undercarry.push_back(0);
         overcarry.push_back(0);
-        fmpz_init(&undercarry[i]);
-        fmpz_init(&overcarry[i]);
+        fmpz_init_set_ui(&undercarry[i], 0);
+        fmpz_init_set_ui(&overcarry[i], 0);
     }
 }
 
@@ -123,14 +125,24 @@ void Burner_singlethreaded::syncR(uint64_t n) {
 
     fmpz_mul(&storage[n], &storage[n], &(ws->pR[scale_next[n]]));
     fmpz_fdiv_qr(&storage[n], &undercarry[n], &storage[n], &(ws->pM[scale_next[n]]));
+    // fmpz_fdiv_q_2exp(&undercarry[n], &storage[n], n);
+    // fmpz_fdiv_r_2exp(&storage[n], &storage[n], n);
+    // TODO: shortcut to basecase if at global minimum
+    if (n == 0)
+        upper_context->syncR(&undercarry[0], &overcarry[0]);
     fmpz_add(&storage[n], &storage[n], &overcarry[n]);
 }
 
 void Burner_singlethreaded::syncL(uint64_t n) {
+    if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
+
     Workspace* ws = &global_context->workspace;
 
-    fmpz_add(&storage[n], &storage[n], &undercarry[n]);
     fmpz_fdiv_qr(&overcarry[n+1], &storage[n], &storage[n], &(ws->pM[scale_self[n]]));
+    if ((uint64_t) n == length-1) {
+        upper_context->syncL(&overcarry[length], &undercarry[length]);
+    }
+    fmpz_add(&storage[n], &storage[n], &undercarry[n+1]);
 }
 
 void Burner_singlethreaded::recurse(int64_t n) {
@@ -139,15 +151,8 @@ void Burner_singlethreaded::recurse(int64_t n) {
     for (uint32_t i = 0; i < pow; i++) {
         recurse(n-1);
         syncR(n);
-        // TODO: shortcut to basecase if at global minimum
-        if (n == 0)
-            upper_context->syncR(&undercarry[0], &overcarry[0]);
     }
-    if (upper_context->can_push_left) {
-        syncL(n);
-        if ((uint64_t) n == length-1)
-            upper_context->syncL(&overcarry[length], &undercarry[length]);
-    }
+    syncL(n);
 }
 
 uint64_t Burner_singlethreaded::step() {
