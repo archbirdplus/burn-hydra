@@ -62,24 +62,44 @@ target_sources(BigCollatz
 
 equip(BigCollatz)
 
-# test cases
-add_executable(manual_test)
-target_sources(manual_test
-    PRIVATE
-    src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
-    src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
-    src/state/kernels.cpp
-    include/communicate.h include/friendly_assert.h include/parse.h
-    include/fluent.h include/state.h
-    # src/latencies/latencies.cpp
+# googletests
 
+# option(PACKAGE_TESTS "Build the tests" ON)
+# if(PACKAGE_TESTS)
+
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+# endif()
+
+# test cases
+add_executable(my_tests)
+target_sources(my_tests
+    PRIVATE
+    src/test/test_fluent.cpp
     src/test/test.cpp
     PUBLIC
     FILE_SET HEADERS
     BASE_DIRS include
 )
 
-equip(manual_test)
+equip(my_tests)
+
+target_link_libraries(
+    my_tests
+    BigCollatz
+    GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(my_tests)
 
 add_test(NAME ctest COMMAND manual_test)
 
