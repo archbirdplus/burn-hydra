@@ -83,6 +83,7 @@ enable_testing()
 add_executable(my_tests)
 target_sources(my_tests
     PRIVATE
+    src/test/test_burners.cpp
     src/test/test_fluent.cpp
     src/test/test.cpp
     PUBLIC
@@ -101,7 +102,7 @@ target_link_libraries(
 include(GoogleTest)
 gtest_discover_tests(my_tests)
 
-add_test(NAME ctest COMMAND manual_test)
+add_test(NAME ctest COMMAND my_tests)
 
 # burn_hydra demo
 add_executable(burn_hydra)
