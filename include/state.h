@@ -10,7 +10,7 @@
 
 #include "metrics.h"
 
-class Setup;
+class CollatzBuilder;
 
 // A fully specified Collatz task to be computed.
 class Task {
@@ -30,7 +30,7 @@ public:
 
     opt<scan_config_t> scan_config;
 
-    Task(const Setup* setup);
+    Task(const CollatzBuilder* setup);
 };
 
 // Acceleration structures for a task.
@@ -58,7 +58,7 @@ public:
     Workspace workspace;
     Metrics metrics;
 
-    Context(const Setup* setup); // init from problem statement
+    Context(const CollatzBuilder* setup); // init from problem statement
 
     void run();
 };

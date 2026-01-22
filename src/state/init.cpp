@@ -55,7 +55,7 @@ T* create_basecase_table(collatz_function_t g, uint64_t n) {
     return table;
 }
 
-Task::Task(const Setup* setup) {
+Task::Task(const CollatzBuilder* setup) {
     bool error = false;
     bool* e = &error;
     checkpoint_interval = setup->checkpoint_interval;
@@ -124,7 +124,7 @@ Workspace::Workspace(const Task task) {
 }
 
 // TODO: really nasty constructor
-Context::Context(const Setup* setup) : task(setup), workspace(task), metrics(true) {
+Context::Context(const CollatzBuilder* setup) : task(setup), workspace(task), metrics(true) {
     
 }
 

@@ -3,12 +3,12 @@
 #include "fluent.h"
 #include "friendly_assert.h"
 
-Setup::Setup() {
+CollatzBuilder::CollatzBuilder() {
     // everything null
 }
 
-Setup Setup::clone() const {
-    Setup setup = Setup();
+CollatzBuilder CollatzBuilder::clone() const {
+    CollatzBuilder setup = CollatzBuilder();
 
     if (this->block_sizes_ramp && this->block_sizes_plat)
         setup.block_sizes(*this->block_sizes_ramp, *this->block_sizes_plat);
@@ -42,51 +42,51 @@ Setup Setup::clone() const {
     return setup;
 }
 
-Setup& Setup::from_argv() {
+CollatzBuilder& CollatzBuilder::from_argv() {
     // TODO: refactor argv parsing
     return *this;
 }
 
-Setup& Setup::block_sizes(vecvec<uint64_t> ramp_up, vecvec<uint64_t> plat) {
+CollatzBuilder& CollatzBuilder::block_sizes(vecvec<uint64_t> ramp_up, vecvec<uint64_t> plat) {
     this->block_sizes_ramp = ramp_up;
     this->block_sizes_plat = plat;
     return *this;
 }
-Setup& Setup::set_checkpoint_interval(int64_t interval) {
+CollatzBuilder& CollatzBuilder::set_checkpoint_interval(int64_t interval) {
     this->checkpoint_interval = interval;
     return *this;
 }
 
-Setup& Setup::set_flint_threads(int threads) {
+CollatzBuilder& CollatzBuilder::set_flint_threads(int threads) {
     this->flint_threads = threads;
     return *this;
 }
 
-Setup& Setup::consistent_collatz(int64_t r, int64_t m, vec<int64_t> J) {
+CollatzBuilder& CollatzBuilder::consistent_collatz(int64_t r, int64_t m, vec<int64_t> J) {
     this->collatz = {
         .r = r, .m = m, .J = J
     };
     return *this;
 }
-Setup& Setup::set_initial(int64_t r) {
+CollatzBuilder& CollatzBuilder::set_initial(int64_t r) {
     this->initial = r;
     return *this;
 }
-Setup& Setup::set_iterations(int64_t r) {
+CollatzBuilder& CollatzBuilder::set_iterations(int64_t r) {
     this->max_iterations = r;
     return *this;
 }
 
-Setup& Setup::do_prune(bool prune) {
+CollatzBuilder& CollatzBuilder::do_prune(bool prune) {
     this->prune = prune;
     return *this;
 }
-Setup& Setup::set_table_size(int64_t n) {
+CollatzBuilder& CollatzBuilder::set_table_size(int64_t n) {
     this->table_size = n;
     return *this;
 }
 
-Setup& Setup::scan_fn(scan_fn_t fn, uint64_t block_size, bool memoize) {
+CollatzBuilder& CollatzBuilder::scan_fn(scan_fn_t fn, uint64_t block_size, bool memoize) {
     void* prev_context = (void*) 0;
     if (this->scan_config) {
         prev_context = this->scan_config->scan_context;
@@ -99,7 +99,7 @@ Setup& Setup::scan_fn(scan_fn_t fn, uint64_t block_size, bool memoize) {
     };
     return *this;
 }
-Setup& Setup::scan_context(void* context) {
+CollatzBuilder& CollatzBuilder::scan_context(void* context) {
     if (!this->scan_config) {
         this->scan_config = {
             .scan_fn = (scan_fn_t)0,
@@ -113,11 +113,11 @@ Setup& Setup::scan_context(void* context) {
     return *this;
 }
 
-bool Setup::check() const {
+bool CollatzBuilder::check() const {
     return collatz && initial && max_iterations && checkpoint_interval && prune && table_size && block_sizes_ramp && block_sizes_plat && flint_threads && scan_config && scan_config->scan_fn;
 }
 
-Context Setup::init() const {
+Context CollatzBuilder::init() const {
     return Context(this);
 }
 

@@ -7,8 +7,8 @@
 
 class Context;
 
-// Setup stores the information about a computation before it is executed.
-class Setup {
+// CollatzBuilder stores the information about a computation before it is executed.
+class CollatzBuilder {
 public:
     opt<collatz_function_t> collatz;
     opt<int64_t> initial;
@@ -23,28 +23,28 @@ public:
 
     opt<scan_config_t> scan_config;
 
-    Setup(); // init with no defaults
+    CollatzBuilder(); // init with no defaults
     // common creatures
-    static Setup hydra();
-    static Setup bigfoot();
-    Setup clone() const; // init new from self
+    static CollatzBuilder hydra();
+    static CollatzBuilder bigfoot();
+    CollatzBuilder clone() const; // init new from self
 
-    Setup& from_argv();
+    CollatzBuilder& from_argv();
 
-    Setup& block_sizes(vecvec<uint64_t> ramp_up, vecvec<uint64_t> plat);
-    Setup& set_checkpoint_interval(int64_t interval);
+    CollatzBuilder& block_sizes(vecvec<uint64_t> ramp_up, vecvec<uint64_t> plat);
+    CollatzBuilder& set_checkpoint_interval(int64_t interval);
 
-    Setup& set_flint_threads(int threads);
+    CollatzBuilder& set_flint_threads(int threads);
 
-    Setup& consistent_collatz(int64_t r, int64_t m, vec<int64_t> J);
-    Setup& set_initial(int64_t x);
-    Setup& set_iterations(int64_t n);
+    CollatzBuilder& consistent_collatz(int64_t r, int64_t m, vec<int64_t> J);
+    CollatzBuilder& set_initial(int64_t x);
+    CollatzBuilder& set_iterations(int64_t n);
 
-    Setup& do_prune(bool prune);
-    Setup& set_table_size(int64_t n);
+    CollatzBuilder& do_prune(bool prune);
+    CollatzBuilder& set_table_size(int64_t n);
 
-    Setup& scan_fn(scan_fn_t fn, uint64_t block_size, bool memoize);
-    Setup& scan_context(void*);
+    CollatzBuilder& scan_fn(scan_fn_t fn, uint64_t block_size, bool memoize);
+    CollatzBuilder& scan_context(void*);
 
     bool check() const;
     Context init() const;

@@ -24,7 +24,7 @@ int main() {
     count_context_t ctx = { .even=0, .odd=0 };
 
     uint64_t iterations = 1<<12;
-    auto s = Setup()
+    auto s = CollatzBuilder()
         .block_sizes({{8,11}}, {})//,{18,19},{19,20},{20,21}},{{21,21,21}})
         .set_flint_threads(4)
         .do_prune(true)
