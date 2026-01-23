@@ -82,6 +82,14 @@ TEST_F(BurnerTest, TwoBlockRun) {
     expect_fmpz_eq_ui(burner.basecase_context->storage, 41358);
     expect_fmpz_eq_ui(&burner.node_context->storage[0], 30265);
     expect_fmpz_eq_ui(&burner.node_context->storage[1], 105);
+    EXPECT_EQ(burner.step(), 16);
+    expect_fmpz_eq_ui(burner.basecase_context->storage, 26096);
+    expect_fmpz_eq_ui(&burner.node_context->storage[0], 41151); // first point of failure
+    expect_fmpz_eq_ui(&burner.node_context->storage[1], 69271);
+    EXPECT_EQ(burner.step(), 16);
+    expect_fmpz_eq_ui(burner.basecase_context->storage, 50647);
+    expect_fmpz_eq_ui(&burner.node_context->storage[0], 63221);
+    expect_fmpz_eq_ui(&burner.node_context->storage[1], 45500433);
 }
 
 TEST_F(BurnerTest, UnevenBlockRun) {
