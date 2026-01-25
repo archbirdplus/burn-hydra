@@ -102,8 +102,6 @@ target_link_libraries(
 include(GoogleTest)
 gtest_discover_tests(my_tests)
 
-add_test(NAME ctest COMMAND my_tests)
-
 # burn_hydra demo
 add_executable(burn_hydra)
 target_sources(burn_hydra
