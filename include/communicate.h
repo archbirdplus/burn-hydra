@@ -13,10 +13,10 @@ void receiveLeft(Context*, fmpz_t);
 void sendRight(Context*, fmpz_t);
 void receiveRight(Context*, fmpz_t);
 
-void sendLeft(Context*, timed_fmpz&);
-void receiveLeft(Context*, timed_fmpz&);
-void sendRight(Context*, timed_fmpz&);
-void receiveRight(Context*, timed_fmpz&);
+void sendLeft(Context*, timed_fmpz*);
+void receiveLeft(Context*, timed_fmpz*);
+void sendRight(Context*, timed_fmpz*);
+void receiveRight(Context*, timed_fmpz*);
 
 void gather(Context*, fmpz_t, fmpz*, int);
 

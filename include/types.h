@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <optional>
+#include <flint/fmpz.h>
+#include <cassert>
 
 template <class T>
 using vec = std::vector<T>;
@@ -28,4 +30,17 @@ typedef struct collatz_function {
     int64_t m;
     vec<int64_t> J;
 } collatz_function_t;
+
+typedef struct timed_fmpz {
+    fmpz fmpz;
+    int64_t iterations;
+
+    timed_fmpz();
+    ~timed_fmpz();
+} timed_fmpz;
+
+bool timed_fmpz_synced(const timed_fmpz& lhs, const timed_fmpz& rhs);
+bool timed_fmpz_check_synced(const timed_fmpz& lhs, const timed_fmpz& rhs);
+
+#define ASSERT_SYNCED(lhs, rhs) { assert(timed_fmpz_check_synced((lhs), (rhs))); }
 

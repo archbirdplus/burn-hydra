@@ -3,19 +3,18 @@
 #include <memory>
 
 #include "state.h"
-#include "communicate.h"
 
 class Burner_basecase {
 public:
     Context* global_ctx;
     uint32_t power;
 
-    fmpz_t storage;
+    timed_fmpz storage;
     user_object_t user_object;
 
     Burner_basecase(Context*);
 
-    void step(fmpz* x_export, fmpz* x_import);
+    void step(timed_fmpz* x_export, timed_fmpz* x_import);
 };
 
 class Burner_MPI;
@@ -28,9 +27,9 @@ public:
     vec<uint32_t> scale_delta;
     vec<uint32_t> scale_next;
     vec<uint32_t> scale_self;
-    vec<fmpz> storage;
-    vec<fmpz> undercarry;
-    vec<fmpz> overcarry;
+    vec<timed_fmpz> storage;
+    vec<timed_fmpz> undercarry;
+    vec<timed_fmpz> overcarry;
 
     Burner_singlethreaded(Context* global_ctx, Burner_MPI* upper_ctx, vec<uint32_t> scales, uint32_t next_scale);
     ~Burner_singlethreaded();
@@ -61,11 +60,12 @@ public:
     Burner_MPI(Context* global_ctx);
     ~Burner_MPI();
 
-    void syncR(fmpz* x_export, fmpz* x_import);
+    void syncR(timed_fmpz* x_export, timed_fmpz* x_import);
 
-    void syncL(fmpz* x_export, fmpz* x_import);
+    void syncL(timed_fmpz* x_export, timed_fmpz* x_import);
 
     // TODO: partial steps up to max
     // NOTE: also these steps will be different on different nodes
     uint64_t step();
 };
+

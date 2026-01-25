@@ -80,19 +80,19 @@ void receiveRight(Context* ctx, fmpz_t x) {
     recv(&ctx->metrics, ctx->task.world_rank-1, -1, x);
 }
 
-void sendLeft(Context* ctx, timed_fmpz& x) {
+void sendLeft(Context* ctx, timed_fmpz* x) {
     send(&ctx->metrics, ctx->task.world_rank+1, +1, &x->fmpz);
     send(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
 }
-void receiveLeft(Context* ctx, timed_fmpz& x) {
+void receiveLeft(Context* ctx, timed_fmpz* x) {
     recv(&ctx->metrics, ctx->task.world_rank+1, +1, &x->fmpz);
     recv(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
 }
-void sendRight(Context* ctx, timed_fmpz& x) {
+void sendRight(Context* ctx, timed_fmpz* x) {
     send(&ctx->metrics, ctx->task.world_rank-1, -1, &x->fmpz);
     send(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
 }
-void receiveRight(Context* ctx, timed_fmpz& x) {
+void receiveRight(Context* ctx, timed_fmpz* x) {
     recv(&ctx->metrics, ctx->task.world_rank-1, -1, &x->fmpz);
     recv(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
 }

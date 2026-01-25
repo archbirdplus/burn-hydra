@@ -1,9 +1,10 @@
 #include <iostream>
+#include <cstdlib>
 
 void friendly_assert(bool condition, const char* message) {
     if (!condition) {
         std::cerr << message << std::endl;
-        exit(1);
+        std::abort();
     }
 }
 
