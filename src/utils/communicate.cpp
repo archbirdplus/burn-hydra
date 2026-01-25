@@ -8,6 +8,22 @@
 #include "communicate.h"
 #include "metrics.h"
 
+void send(Metrics* metrics, int rank, int d, int64_t* x) {
+    metrics->start_timer(d > 0 ? waiting_send_left : waiting_send_right);
+    metrics->start_timer(d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
+    MPI_Send(x, 1, MPI_LONG, rank, 2, MPI_COMM_WORLD);
+    metrics->stop_timer(d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
+    metrics->stop_timer(d > 0 ? waiting_send_left : waiting_send_right);
+}
+
+void recv(Metrics* metrics, int rank, int d, int64_t* x) {
+    metrics->start_timer(d > 0 ? waiting_send_left : waiting_send_right);
+    metrics->start_timer(d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
+    MPI_Recv(x, 1, MPI_LONG, rank, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    metrics->stop_timer(d > 0 ? waiting_send_left_mpi : waiting_send_right_mpi);
+    metrics->stop_timer(d > 0 ? waiting_send_left : waiting_send_right);
+}
+
 void send(Metrics* metrics, int rank, int d, fmpz_t fx) {
     metrics->start_timer(d > 0 ? waiting_send_left : waiting_send_right);
     metrics->start_timer(d > 0 ? waiting_send_left_copy : waiting_send_right_copy);
@@ -62,6 +78,23 @@ void sendRight(Context* ctx, fmpz_t x) {
 }
 void receiveRight(Context* ctx, fmpz_t x) {
     recv(&ctx->metrics, ctx->task.world_rank-1, -1, x);
+}
+
+void sendLeft(Context* ctx, timed_fmpz& x) {
+    send(&ctx->metrics, ctx->task.world_rank+1, +1, &x->fmpz);
+    send(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
+}
+void receiveLeft(Context* ctx, timed_fmpz& x) {
+    recv(&ctx->metrics, ctx->task.world_rank+1, +1, &x->fmpz);
+    recv(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
+}
+void sendRight(Context* ctx, timed_fmpz& x) {
+    send(&ctx->metrics, ctx->task.world_rank-1, -1, &x->fmpz);
+    send(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
+}
+void receiveRight(Context* ctx, timed_fmpz& x) {
+    recv(&ctx->metrics, ctx->task.world_rank-1, -1, &x->fmpz);
+    recv(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
 }
 
 
