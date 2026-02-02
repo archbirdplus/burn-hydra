@@ -53,6 +53,19 @@ void Burner_singlethreaded::pullR(uint64_t n) {
     fmpz_add(&storage[n].fmpz, &storage[n].fmpz, &overcarry[n].fmpz);
 }
 
+// Exchanges between nodes n <--> n-1
+// At n=0, 0 <--> -1 indicates syncing right with the outer burner.
+// At n=length, length <--> length-1 indicates syncing left with the outer burner.
+void Burner_singlethreaded::exchange(uint64_t n) {
+    // By convention, pull to the left direction before pushing to the right direction.
+    // This needs to be synchronized.
+    // These calls automatically handle calling to upper context.
+    if (n > 0) pushL(n-1);
+    if (n >= length) pullR(n);
+    if (n >= length) pushR(n);
+    if (n > 0) pullL(n-1);
+}
+
 void Burner_singlethreaded::pushL(uint64_t n) {
     if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
 
@@ -79,13 +92,10 @@ void Burner_singlethreaded::recurse(int64_t n) {
     if (n < 0) return;
     uint64_t pow = 1 << scale_delta[n];
     for (uint32_t i = 0; i < pow; i++) {
-        tick(n);
-        pushR(n);
+        exchange(n); // exchange can have multiple orders inside of itself
+        tick(n); // tick and recurse can happen in parallel
         recurse(n-1);
-        pullR(n);
     }
-    pushL(n);
-    pullL(n);
 }
 
 uint64_t Burner_singlethreaded::step() {

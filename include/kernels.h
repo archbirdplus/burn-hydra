@@ -36,6 +36,8 @@ public:
 
     void tick(uint64_t n);
 
+    void exchange(uint64_t n);
+
     void pushR(uint64_t n);
     void pullR(uint64_t n);
 
