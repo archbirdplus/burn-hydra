@@ -14,7 +14,8 @@ public:
 
     Burner_basecase(Context*);
 
-    void step(timed_fmpz* x_export, timed_fmpz* x_import);
+    void pushL(timed_fmpz* x_import);
+    void step(timed_fmpz* x_export);
 };
 
 class Burner_MPI;

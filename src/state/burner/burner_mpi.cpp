@@ -22,28 +22,31 @@ Burner_MPI::~Burner_MPI() {
     
 }
 
-void Burner_MPI::syncR(timed_fmpz* x_export, timed_fmpz* x_import) {
+void Burner_MPI::pullR(timed_fmpz* x_import) {
     if (!can_push_right) {
-        basecase_context->step(x_export, x_import);
+        basecase_context->pushL(x_import);
     } else {
-        sendRight(global_context, x_export);
         receiveRight(global_context, x_import);
     }
 }
 
-// TODO: should this check for what x_import *was*?
-void Burner_MPI::syncL(timed_fmpz* x_export, timed_fmpz* x_import) {
-    if (world_rank == world_size - 1) {
-        fmpz_swap(&x_import->fmpz, &x_export->fmpz);
-        int64_t tmp = x_import->iterations;
-        x_export->iterations = x_import->iterations;
-        x_import->iterations = tmp;
-        // TODO: check
-        fmpz_mul(&x_import->fmpz, &x_import->fmpz, &(global_context->workspace.pM[node_context->scale_self.back()]));
+void Burner_MPI::pushR(timed_fmpz* x_export) {
+    if (!can_push_right) {
+        basecase_context->step(x_export);
     } else {
-        receiveLeft(global_context, x_import);
-        sendLeft(global_context, x_export);
+        sendRight(global_context, x_export);
     }
+}
+
+void Burner_MPI::pushL(timed_fmpz* x_export) {
+    assert(can_push_left);
+    sendLeft(global_context, x_export);
+}
+
+// TODO: should this check for what x_import *was*?
+void Burner_MPI::pullL(timed_fmpz* x_import) {
+    assert(can_push_left);
+    receiveLeft(global_context, x_import);
 }
 
 uint64_t Burner_MPI::step() {

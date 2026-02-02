@@ -49,10 +49,15 @@ void expect_fmpz_eq_ui(fmpz* lhs, uint64_t rhs) {
 TEST_F(BurnerTest, JustTimeChecks) {
     Context context = builder.block_sizes({{4, 4, 5}}, {}).init();
     Burner_MPI burner = Burner_MPI(&context);
+    std::cout << "step 0" << std::endl;
     burner.step();
+    std::cout << "step 1" << std::endl;
     burner.step();
+    std::cout << "step 2" << std::endl;
     burner.step();
+    std::cout << "step 3" << std::endl;
     burner.step();
+    std::cout << "step 4" << std::endl;
 }
 
 /*

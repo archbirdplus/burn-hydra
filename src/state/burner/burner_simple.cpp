@@ -81,6 +81,7 @@ void Burner_singlethreaded::pushL(uint64_t n) {
 
 void Burner_singlethreaded::pullL(uint64_t n) {
     if ((uint64_t) n == length-1) {
+        if (!upper_context->can_push_left) return;
         upper_context->pullL(&undercarry[length]);
     }
     // assume it was otherwise inserted into undercarry[n+1]
