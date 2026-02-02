@@ -34,9 +34,13 @@ public:
     Burner_singlethreaded(Context* global_ctx, Burner_MPI* upper_ctx, vec<uint32_t> scales, uint32_t next_scale);
     ~Burner_singlethreaded();
 
-    void syncR(uint64_t n);
+    void tick(uint64_t n);
 
-    void syncL(uint64_t n);
+    void pushR(uint64_t n);
+    void pullR(uint64_t n);
+
+    void pushL(uint64_t n);
+    void pullL(uint64_t n);
 
     void recurse(int64_t n);
 
@@ -60,9 +64,11 @@ public:
     Burner_MPI(Context* global_ctx);
     ~Burner_MPI();
 
-    void syncR(timed_fmpz* x_export, timed_fmpz* x_import);
+    void pushR(timed_fmpz* x_export);
+    void pullR(timed_fmpz* x_import);
 
-    void syncL(timed_fmpz* x_export, timed_fmpz* x_import);
+    void pushL(timed_fmpz* x_export);
+    void pullL(timed_fmpz* x_import);
 
     // TODO: partial steps up to max
     // NOTE: also these steps will be different on different nodes
