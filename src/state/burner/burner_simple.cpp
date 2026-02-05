@@ -1,4 +1,17 @@
 #include "kernels.h"
+#include <iostream>
+#include <iomanip>
+
+void diagram(int64_t max, uint64_t n, uint64_t val, char fill) {
+    for (int64_t i = max-1; i > n; i--) {
+        std::cout << "[    ]";
+    }
+    std::cout << "[" << std::setfill(fill) << std::setw(4) << val << "]";
+    for (int64_t i = n-1; i >= 0; i--) {
+        std::cout << "[    ]";
+    }
+    std::cout << std::endl;
+}
 
 Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, Burner_MPI* upper_ctx, vec<uint32_t> scales, uint32_t next_scale) {
     global_context = global_ctx;
@@ -32,10 +45,13 @@ Burner_singlethreaded::~Burner_singlethreaded() {
 void Burner_singlethreaded::tick(uint64_t n) {
     Workspace* ws = &global_context->workspace;
 
-    fmpz_mul(&storage[n].fmpz, &storage[n].fmpz, &(ws->pR[scale_next[n]]));
-    fmpz_fdiv_qr(&storage[n].fmpz, &undercarry[n].fmpz, &storage[n].fmpz, &(ws->pM[scale_next[n]]));
-    storage[n].iterations += (uint64_t) 1 << scale_self[n];
+    uint64_t scale = scale_next[n];
+    fmpz_mul(&storage[n].fmpz, &storage[n].fmpz, &(ws->pR[scale]));
+    fmpz_fdiv_qr(&storage[n].fmpz, &undercarry[n].fmpz, &storage[n].fmpz, &(ws->pM[scale]));
+    storage[n].iterations += (uint64_t) 1 << scale;
     undercarry[n].iterations = storage[n].iterations;
+    std::cout << " tick to  ";
+    diagram(length, n, storage[n].iterations, '\'');
     // set undercarry[n]
 }
 
@@ -43,11 +59,15 @@ void Burner_singlethreaded::pushR(uint64_t n) {
     // assume tick previously happened, setting undercarry[n]
     if (n == 0)
         upper_context->pushR(&undercarry[0]);
+    std::cout << " pushR->  ";
+    diagram(length, n, storage[n].iterations, ' ');
 }
 
 void Burner_singlethreaded::pullR(uint64_t n) {
     if (n == 0)
         upper_context->pullR(&overcarry[0]);
+    std::cout << " pullR<-  ";
+    diagram(length, n, overcarry[n].iterations, ' ');
     // assume corresponding pushL previously happened, setting overcarry[n]
     ASSERT_SYNCED(storage[n], overcarry[n]);
     fmpz_add(&storage[n].fmpz, &storage[n].fmpz, &overcarry[n].fmpz);
@@ -61,12 +81,14 @@ void Burner_singlethreaded::exchange(uint64_t n) {
     // This needs to be synchronized.
     // These calls automatically handle calling to upper context.
     if (n > 0) pushL(n-1);
-    if (n >= length) pullR(n);
-    if (n >= length) pushR(n);
+    if (n <= length) pullR(n);
+    if (n <= length) pushR(n);
     if (n > 0) pullL(n-1);
 }
 
 void Burner_singlethreaded::pushL(uint64_t n) {
+    std::cout << " pushL  <-";
+    diagram(length, n, storage[n].iterations, ' ');
     if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
 
     Workspace* ws = &global_context->workspace;
@@ -80,6 +102,8 @@ void Burner_singlethreaded::pushL(uint64_t n) {
 }
 
 void Burner_singlethreaded::pullL(uint64_t n) {
+    std::cout << " pullL  ->";
+    diagram(length, n, undercarry[n+1].iterations, ' ');
     if ((uint64_t) n == length-1) {
         if (!upper_context->can_push_left) return;
         upper_context->pullL(&undercarry[length]);

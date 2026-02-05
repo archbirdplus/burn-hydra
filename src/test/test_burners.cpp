@@ -35,7 +35,7 @@ public:
     }
 };
 
-void expect_timed_eq(timed_fmpz lhs, uint64_t rhs) {
+void expect_timed_eq_val_time(timed_fmpz lhs, uint64_t rhs, uint64_t time) {
     char* str = fmpz_get_str(NULL, 10, &lhs.fmpz);
     EXPECT_TRUE(fmpz_equal_ui(&lhs.fmpz, rhs)) << str << " is not equal to " << rhs;
     free(str);
@@ -58,6 +58,10 @@ TEST_F(BurnerTest, JustTimeChecks) {
     std::cout << "step 3" << std::endl;
     burner.step();
     std::cout << "step 4" << std::endl;
+    burner.step();
+    std::cout << "step 5" << std::endl;
+    burner.step();
+    std::cout << "step 6" << std::endl;
 }
 
 /*

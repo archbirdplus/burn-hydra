@@ -1,4 +1,5 @@
 #include "kernels.h"
+#include <iostream>
 
 Burner_basecase::Burner_basecase(Context* ctx) {
     global_ctx = ctx;
@@ -17,6 +18,10 @@ void Burner_basecase::pushL(timed_fmpz* x_export) {
 
 // Takes import and writes to export.
 void Burner_basecase::step(timed_fmpz* x_import) {
+    fmpz* stored = &storage.fmpz;
+    ASSERT_SYNCED(storage, *x_import);
+    fmpz_add(stored, stored, &x_import->fmpz);
+
     uint64_t n = (uint64_t) 1 << power;
     uint64_t r = global_ctx->task.collatz.r;
     uint64_t m = global_ctx->task.collatz.m;
@@ -28,7 +33,6 @@ void Burner_basecase::step(timed_fmpz* x_import) {
         scan_fn = config.scan_fn;
         scan_context = config.scan_context;
     }
-    fmpz* stored = &storage.fmpz;
     for (uint64_t i = 0; i < n; i++) {
         uint64_t residue = fmpz_fdiv_ui(stored, m);
         if (scan_fn) {
@@ -41,8 +45,7 @@ void Burner_basecase::step(timed_fmpz* x_import) {
         // TODO: 2exp optimizations
     }
     storage.iterations += n;
-    ASSERT_SYNCED(storage, *x_import);
-    fmpz_add(stored, stored, &x_import->fmpz);
+    std::cout << "stepped to " << storage.iterations << " by " << storage.iterations << std::endl;
 }
 
 

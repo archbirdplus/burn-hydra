@@ -1,5 +1,6 @@
 #include "kernels.h"
 #include "communicate.h"
+#include <iostream>
 
 Burner_MPI::Burner_MPI(Context* global_ctx) {
     global_context = global_ctx;
@@ -7,6 +8,7 @@ Burner_MPI::Burner_MPI(Context* global_ctx) {
     world_rank = global_ctx->task.world_rank;
     can_push_left = world_rank != world_size - 1;
     can_push_right = world_rank != 0;
+    std::cout << "can push right: " << can_push_right << " by world rank is " << world_rank << std::endl;
     vec<uint32_t> scales = {};
     for (uint64_t i = 0; i < global_ctx->task.block_sizes[world_rank].size(); i++) {
         scales.push_back(static_cast<uint32_t>(global_ctx->task.block_sizes[world_rank][i]));
@@ -32,6 +34,7 @@ void Burner_MPI::pullR(timed_fmpz* x_import) {
 
 void Burner_MPI::pushR(timed_fmpz* x_export) {
     if (!can_push_right) {
+        std::cout << "stepping now" << std::endl;
         basecase_context->step(x_export);
     } else {
         sendRight(global_context, x_export);
