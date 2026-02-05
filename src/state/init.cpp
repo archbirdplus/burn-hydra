@@ -137,6 +137,7 @@ void Context::run() {
     // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
     // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
     Burner_MPI burner = Burner_MPI(this);
+    flint_set_num_threads(task.flint_threads);
     uint64_t iterations = this->task.max_iterations;
     while (iterations > 0) {
         uint64_t taken = burner.step();
