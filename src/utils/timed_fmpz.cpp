@@ -4,6 +4,7 @@
 #include <cassert>
 
 timed_fmpz::timed_fmpz() {
+    std::cout << "init fmpz" << std::endl;
     fmpz_init_set_ui(&fmpz, 0);
     iterations = -1;
 }

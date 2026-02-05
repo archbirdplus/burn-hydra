@@ -45,7 +45,6 @@ void Burner_basecase::step(timed_fmpz* x_import) {
         // TODO: 2exp optimizations
     }
     storage.iterations += n;
-    std::cout << "stepped to " << storage.iterations << " by " << storage.iterations << std::endl;
 }
 
 

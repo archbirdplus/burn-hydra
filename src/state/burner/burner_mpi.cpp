@@ -34,7 +34,6 @@ void Burner_MPI::pullR(timed_fmpz* x_import) {
 
 void Burner_MPI::pushR(timed_fmpz* x_export) {
     if (!can_push_right) {
-        std::cout << "stepping now" << std::endl;
         basecase_context->step(x_export);
     } else {
         sendRight(global_context, x_export);
