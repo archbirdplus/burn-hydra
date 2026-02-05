@@ -2,7 +2,7 @@
 #include <iostream>
 #include <iomanip>
 
-void diagram(int64_t max, uint64_t n, uint64_t val, char fill) {
+void diagram(int64_t max, int64_t n, uint64_t val, char fill) {
     for (int64_t i = max-1; i > n; i--) {
         std::cout << "[        ]";
     }
@@ -13,12 +13,13 @@ void diagram(int64_t max, uint64_t n, uint64_t val, char fill) {
     std::cout << std::endl;
 }
 
-Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, Burner_MPI* upper_ctx, vec<uint32_t> scales, uint32_t next_scale) {
+Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Burner_basecase> basecase_ctx) {
     global_context = global_ctx;
-    upper_context = upper_ctx;
-    this->length = scales.size();
-    scale_self = scales;
-    scale_next = {next_scale};
+    upper_context = std::move(upper_ctx);
+    basecase_context = std::move(basecase_ctx);
+    scale_self = upper_context->local_scales;
+    this->length = scale_self.size();
+    scale_next = {upper_context->local_next_scale};
     scale_next.insert(scale_next.end(), scale_self.begin(), scale_self.end());
     scale_delta = {};
     for (uint64_t i = 0; i < length; i++)
@@ -61,13 +62,21 @@ void Burner_singlethreaded::tick(uint64_t n) {
 
 void Burner_singlethreaded::pushR(uint64_t n) {
     // assume tick previously happened, setting undercarry[n]
-    if (n == 0)
-        upper_context->pushR(&undercarry[0]);
+    if (n == 0) {
+        if (upper_context->can_push_right)
+            upper_context->pushR(&undercarry[0]);
+        else
+            basecase_context->step(&undercarry[0]);
+    }
 }
 
 void Burner_singlethreaded::pullR(uint64_t n) {
-    if (n == 0)
-        upper_context->pullR(&overcarry[0]);
+    if (n == 0) {
+        if (upper_context->can_push_right)
+            upper_context->pullR(&overcarry[0]);
+        else
+            basecase_context->pushL(&overcarry[0]);
+    }
     // assume corresponding pushL previously happened, setting overcarry[n]
     ASSERT_SYNCED(storage[n], overcarry[n]);
     fmpz_add(&storage[n].fmpz, &storage[n].fmpz, &overcarry[n].fmpz);

@@ -136,11 +136,14 @@ void Context::run() {
     // possibly something like this?
     // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
     // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
-    Burner_MPI burner = Burner_MPI(this);
+    auto outer = std::unique_ptr<Burner_MPI>(new Burner_MPI(this));
+    auto basecase = std::unique_ptr<Burner_basecase>(new Burner_basecase(this));
+    auto burner = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(this, std::move(outer), std::move(basecase)));
+
     flint_set_num_threads(task.flint_threads);
     uint64_t iterations = this->task.max_iterations;
     while (iterations > 0) {
-        uint64_t taken = burner.step();
+        uint64_t taken = burner->step();
         if (iterations < taken) {
              throw std::runtime_error("Internal error: took too many steps");
         }

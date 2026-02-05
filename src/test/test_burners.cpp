@@ -63,7 +63,6 @@ typedef struct count_context {
 
 user_object_t count_parities(void* context, user_object_t x, uint64_t residue) {
     const auto ctx = (count_context_t*) context;
-    uint64_t cur_count = ctx->even+ctx->odd+1;
     if (residue & 1) {
         ctx->odd += 1;
     } else {
@@ -76,7 +75,7 @@ TEST_F(BurnerTest, CountParities) {
     count_context_t counts = { 0, 0 };
     Context context = builder
         .block_sizes({{8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}}, {})
-        .set_iterations(1+(1<<20))
+        .set_iterations((1<<20))
         .scan_fn(&count_parities, 1, false)
         .scan_context(&counts)
         .init();
@@ -90,7 +89,11 @@ TEST_F(BurnerTest, CountParities) {
 
 TEST_F(BurnerTest, CheckFinalValue) {
     Context context = builder.block_sizes({{4, 5, 5}}, {}).init();
-    Burner_MPI burner = Burner_MPI(&context);
+    Burner_singlethreaded burner = Burner_singlethreaded(
+        &context,
+        std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
+        std::unique_ptr<Burner_basecase>(new Burner_basecase(&context))
+    );
     std::cout << "step 0" << std::endl;
     burner.step();
     std::cout << "step 1" << std::endl;
@@ -112,15 +115,15 @@ TEST_F(BurnerTest, CheckFinalValue) {
     // are always extracted.
     fmpz_one_2exp(tmp, 0);
     fmpz_addmul(&result.fmpz, &burner.basecase_context->storage.fmpz, tmp);
-    fmpz_addmul(&result.fmpz, &burner.node_context->undercarry[0].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.undercarry[0].fmpz, tmp);
     fmpz_one_2exp(tmp, (1<<4)*1);
-    fmpz_addmul(&result.fmpz, &burner.node_context->storage[0].fmpz, tmp);
-    fmpz_addmul(&result.fmpz, &burner.node_context->undercarry[1].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.storage[0].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.undercarry[1].fmpz, tmp);
     fmpz_one_2exp(tmp, (1<<4)*2);
-    fmpz_addmul(&result.fmpz, &burner.node_context->storage[1].fmpz, tmp);
-    fmpz_addmul(&result.fmpz, &burner.node_context->undercarry[2].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.storage[1].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.undercarry[2].fmpz, tmp);
     fmpz_one_2exp(tmp, (1<<4)*2+(1<<5));
-    fmpz_addmul(&result.fmpz, &burner.node_context->storage[2].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.storage[2].fmpz, tmp);
 
     timed_fmpz answer = timed_fmpz();
     fmpz_set_uiui(&answer.fmpz, 850778579484107, 1983176903683680569);

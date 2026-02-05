@@ -10,7 +10,7 @@ Burner_basecase::Burner_basecase(Context* ctx) {
     user_object = 0; // TODO: what should this be initially?
 }
 
-Burner_basecase::~Burner_basecase(Context* ctx) {
+Burner_basecase::~Burner_basecase() {
     storage.clear();
 }
 
