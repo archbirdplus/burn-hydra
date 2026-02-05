@@ -4,7 +4,7 @@
 
 #include "state.h"
 
-class Burner_basecase {
+class Basecase_simple {
 public:
     Context* global_ctx;
     uint32_t power;
@@ -12,8 +12,18 @@ public:
     timed_fmpz storage;
     user_object_t user_object;
 
-    Burner_basecase(Context*);
-    ~Burner_basecase();
+    Basecase_simple(Context*);
+    virtual ~Basecase_simple();
+
+    virtual void pushL(timed_fmpz* x_import);
+    virtual void step(timed_fmpz* x_export);
+};
+
+class Basecase_m2exp: public Basecase_simple {
+public:
+    uint32_t mlog;
+
+    Basecase_m2exp(Context*);
 
     void pushL(timed_fmpz* x_import);
     void step(timed_fmpz* x_export);
@@ -25,7 +35,7 @@ class Burner_singlethreaded {
 public:
     Context* global_context;
     std::unique_ptr<Burner_MPI> upper_context;
-    std::unique_ptr<Burner_basecase> basecase_context;
+    std::unique_ptr<Basecase_simple> basecase_context;
     uint64_t length;
     vec<uint32_t> scale_delta;
     vec<uint32_t> scale_next;
@@ -34,7 +44,7 @@ public:
     vec<timed_fmpz> undercarry;
     vec<timed_fmpz> overcarry;
 
-    Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Burner_basecase> basecase_ctx);
+    Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
     ~Burner_singlethreaded();
 
     void tick(uint64_t n);

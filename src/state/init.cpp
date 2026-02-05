@@ -137,7 +137,10 @@ void Context::run() {
     // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
     // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
     auto outer = std::unique_ptr<Burner_MPI>(new Burner_MPI(this));
-    auto basecase = std::unique_ptr<Burner_basecase>(new Burner_basecase(this));
+    auto basecase = std::unique_ptr<Basecase_simple>(new Basecase_simple(this));
+    if (task.collatz.m == (1 << n_flog(task.collatz.m, 2))) {
+        basecase = std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(this));
+    }
     auto burner = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(this, std::move(outer), std::move(basecase)));
 
     flint_set_num_threads(task.flint_threads);

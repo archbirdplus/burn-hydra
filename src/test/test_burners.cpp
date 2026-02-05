@@ -92,7 +92,7 @@ TEST_F(BurnerTest, CheckFinalValue) {
     Burner_singlethreaded burner = Burner_singlethreaded(
         &context,
         std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
-        std::unique_ptr<Burner_basecase>(new Burner_basecase(&context))
+        std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(&context))
     );
     std::cout << "step 0" << std::endl;
     burner.step();

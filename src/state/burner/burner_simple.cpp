@@ -13,7 +13,7 @@ void diagram(int64_t max, int64_t n, uint64_t val, char fill) {
     std::cout << std::endl;
 }
 
-Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Burner_basecase> basecase_ctx) {
+Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
     upper_context = std::move(upper_ctx);
     basecase_context = std::move(basecase_ctx);

@@ -51,7 +51,7 @@ target_sources(BigCollatz
     PRIVATE
     src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
     src/state/burner/burner_simple.cpp src/state/burner/burner_mpi.cpp
-        src/state/burner/burner_basecase.cpp
+        src/state/burner/basecase_simple.cpp src/state/burner/basecase_m2exp.cpp
     src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
     src/utils/timed_fmpz.cpp
     include/communicate.h include/friendly_assert.h include/parse.h
