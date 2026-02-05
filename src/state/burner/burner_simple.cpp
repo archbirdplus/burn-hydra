@@ -117,7 +117,7 @@ void Burner_singlethreaded::recurse(int64_t n) {
     if (n < 0) return;
     uint64_t pow = 1 << scale_delta[n];
     for (uint32_t i = 0; i < pow; i++) {
-        exchange(n); // exchange can have multiple orders inside of itself
+        exchange(n); // exchange can have multiple orders inside itself
         tick(n); // tick and recurse can happen in parallel
         recurse(n-1);
     }

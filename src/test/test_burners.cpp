@@ -35,9 +35,19 @@ public:
     }
 };
 
+void expect_timed_eq(timed_fmpz lhs, timed_fmpz rhs) {
+    EXPECT_EQ(lhs.iterations, rhs.iterations) << "integers are not synced";
+    char* strL = fmpz_get_str(NULL, 10, &lhs.fmpz);
+    char* strR = fmpz_get_str(NULL, 10, &rhs.fmpz);
+    EXPECT_TRUE(fmpz_equal(&lhs.fmpz, &rhs.fmpz)) << strL << " is not equal to " << strR;
+    free(strL);
+    free(strR);
+}
+
 void expect_timed_eq_val_time(timed_fmpz lhs, uint64_t rhs, uint64_t time) {
+    EXPECT_EQ(lhs.iterations, time) << "integers are not synced";
     char* str = fmpz_get_str(NULL, 10, &lhs.fmpz);
-    EXPECT_TRUE(fmpz_equal_ui(&lhs.fmpz, rhs)) << str << " is not equal to " << rhs;
+    EXPECT_TRUE(fmpz_equal_ui(&lhs.fmpz, rhs)) << str << " is not equal to " << str;
     free(str);
 }
 
@@ -46,8 +56,8 @@ void expect_fmpz_eq_ui(fmpz* lhs, uint64_t rhs) {
     EXPECT_TRUE(fmpz_equal_ui(lhs, rhs)) << (str = fmpz_get_str(NULL, 10, lhs)) << " is not equal to " << rhs;
 }
 
-TEST_F(BurnerTest, JustTimeChecks) {
-    Context context = builder.block_sizes({{4, 4, 5}}, {}).init();
+TEST_F(BurnerTest, JustTimeAndFinal) {
+    Context context = builder.block_sizes({{4, 5, 5}}, {}).init();
     Burner_MPI burner = Burner_MPI(&context);
     std::cout << "step 0" << std::endl;
     burner.step();
@@ -62,6 +72,27 @@ TEST_F(BurnerTest, JustTimeChecks) {
     std::cout << "step 5" << std::endl;
     burner.step();
     std::cout << "step 6" << std::endl;
+
+    fmpz_t tmp; fmpz_init(tmp);
+    timed_fmpz result = timed_fmpz();
+    // Currently overcarries are only computed for pushL (which does
+    // not necessarily happen on the last iteration) but undecarries
+    // are always extracted.
+    fmpz_one_2exp(tmp, 0);
+    fmpz_addmul(&result.fmpz, &burner.basecase_context->storage.fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.node_context->undercarry[0].fmpz, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*1);
+    fmpz_addmul(&result.fmpz, &burner.node_context->storage[0].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.node_context->undercarry[1].fmpz, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*2);
+    fmpz_addmul(&result.fmpz, &burner.node_context->storage[1].fmpz, tmp);
+    fmpz_addmul(&result.fmpz, &burner.node_context->undercarry[2].fmpz, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*2+(1<<5));
+    fmpz_addmul(&result.fmpz, &burner.node_context->storage[2].fmpz, tmp);
+
+    timed_fmpz answer = timed_fmpz();
+    fmpz_set_uiui(&answer.fmpz, 850778579484107, 1983176903683680569);
+    expect_timed_eq(answer, result);
 }
 
 /*
