@@ -10,6 +10,10 @@ Burner_basecase::Burner_basecase(Context* ctx) {
     user_object = 0; // TODO: what should this be initially?
 }
 
+Burner_basecase::~Burner_basecase(Context* ctx) {
+    storage.clear();
+}
+
 void Burner_basecase::pushL(timed_fmpz* x_export) {
     fmpz* stored = &storage.fmpz;
     fmpz_fdiv_qr(&x_export->fmpz, stored, stored, &(global_ctx->workspace.pM[power]));

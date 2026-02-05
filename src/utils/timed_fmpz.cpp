@@ -4,13 +4,11 @@
 #include <cassert>
 
 timed_fmpz::timed_fmpz() {
-    std::cout << "init fmpz" << std::endl;
     fmpz_init_set_ui(&fmpz, 0);
     iterations = -1;
 }
 
-timed_fmpz::~timed_fmpz() {
-    std::cout << "timed_fmpz clearing" << std::endl;
+void timed_fmpz::clear() {
     fmpz_clear(&fmpz);
 }
 

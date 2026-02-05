@@ -13,6 +13,7 @@ public:
     user_object_t user_object;
 
     Burner_basecase(Context*);
+    ~Burner_basecase(Context*);
 
     void pushL(timed_fmpz* x_import);
     void step(timed_fmpz* x_export);

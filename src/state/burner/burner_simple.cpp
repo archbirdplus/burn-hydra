@@ -39,7 +39,13 @@ Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, Burner_MPI* up
 }
 
 Burner_singlethreaded::~Burner_singlethreaded() {
-    
+    for (uint64_t i = 0; i < length+1; i++) {
+        storage[i].clear();
+    }
+    for (uint64_t i = 0; i < length+1; i++) {
+        undercarry[i].clear();
+        overcarry[i].clear();
+    }
 }
 
 void Burner_singlethreaded::tick(uint64_t n) {

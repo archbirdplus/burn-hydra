@@ -36,7 +36,7 @@ typedef struct timed_fmpz {
     int64_t iterations;
 
     timed_fmpz();
-    ~timed_fmpz();
+    void clear();
 } timed_fmpz;
 
 bool timed_fmpz_synced(const timed_fmpz& lhs, const timed_fmpz& rhs);
