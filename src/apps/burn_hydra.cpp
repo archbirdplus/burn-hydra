@@ -32,7 +32,8 @@ int main() {
         .from_argv()
         .consistent_collatz(3, 2, {0, 0})
         .set_initial(3)
-        .scan_fn(count_fn, 1, false)
+        .set_table_size(2)
+        .scan_fn(count_fn, 2, false)
         .scan_context(&ctx);
     s.init().run();
 

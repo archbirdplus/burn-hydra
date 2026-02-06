@@ -52,6 +52,7 @@ target_sources(BigCollatz
     src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
     src/state/burner/burner_simple.cpp src/state/burner/burner_mpi.cpp
         src/state/burner/basecase_simple.cpp src/state/burner/basecase_m2exp.cpp
+        src/state/burner/basecase_table.cpp
     src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
     src/utils/timed_fmpz.cpp
     include/communicate.h include/friendly_assert.h include/parse.h
@@ -85,6 +86,7 @@ enable_testing()
 add_executable(my_tests)
 target_sources(my_tests
     PRIVATE
+    src/test/test_init.cpp
     src/test/test_burners.cpp
     src/test/test_fluent.cpp
     src/test/test.cpp

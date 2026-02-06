@@ -71,12 +71,44 @@ user_object_t count_parities(void* context, user_object_t x, uint64_t residue) {
     return x;
 }
 
+user_object_t count_parities_fancy(void* context, user_object_t x, uint64_t residue) {
+    const auto ctx = (count_context_t*) context;
+    if (residue & 1) {
+        ctx->odd += 1;
+    } else {
+        ctx->even += 1;
+    }
+    if ((3*residue/2) & 1) {
+        ctx->odd += 1;
+    } else {
+        ctx->even += 1;
+    }
+    return x;
+}
+
 TEST_F(BurnerTest, CountParities) {
     count_context_t counts = { 0, 0 };
     Context context = builder
         .block_sizes({{8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}}, {})
         .set_iterations((1<<20))
+        .set_table_size(1)
         .scan_fn(&count_parities, 1, false)
+        .scan_context(&counts)
+        .init();
+    context.run();
+
+    // Including initial step but not H^(2^20)(3)
+    EXPECT_EQ(counts.even, 523508);
+    EXPECT_EQ(counts.odd, 525068);
+}
+
+TEST_F(BurnerTest, CountParitiesFancy) {
+    count_context_t counts = { 0, 0 };
+    Context context = builder
+        .block_sizes({{8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}}, {})
+        .set_iterations((1<<20))
+        .set_table_size(2)
+        .scan_fn(&count_parities_fancy, 2, false)
         .scan_context(&counts)
         .init();
     context.run();
@@ -92,7 +124,7 @@ TEST_F(BurnerTest, CheckFinalValue) {
     Burner_singlethreaded burner = Burner_singlethreaded(
         &context,
         std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
-        std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(&context))
+        std::unique_ptr<Basecase_table>(new Basecase_table(&context))
     );
     std::cout << "step 0" << std::endl;
     burner.step();

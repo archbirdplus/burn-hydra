@@ -29,6 +29,13 @@ public:
     void step(timed_fmpz* x_export);
 };
 
+class Basecase_table: public Basecase_simple {
+public:
+    Basecase_table(Context*);
+
+    void step(timed_fmpz* x_export);
+};
+
 class Burner_MPI;
 
 class Burner_singlethreaded {
