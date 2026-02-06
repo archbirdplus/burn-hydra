@@ -30,7 +30,7 @@ int main() {
         .do_prune(true)
         .set_iterations(iterations)
         .from_argv()
-        .consistent_collatz(3, 2, {0, 0})
+        .consistent_collatz(3, 2, {0, 1})
         .set_initial(3)
         .set_table_size(2)
         .scan_fn(count_fn, 2, false)

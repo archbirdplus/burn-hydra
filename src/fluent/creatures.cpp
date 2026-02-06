@@ -7,7 +7,7 @@ static Setup::HydraMap() {
     return Setup()
         .block_sizes({{8,18},{18,19},{19,20},{20,21}},{{21,21,21}})
         .set_flint_threads(4)
-        .consistent_collatz(3, 2, {0, 0})
+        .consistent_collatz(3, 2, {0, 1})
         .do_prune(true)
 }
 
