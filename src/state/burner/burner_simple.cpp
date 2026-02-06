@@ -2,17 +2,6 @@
 #include <iostream>
 #include <iomanip>
 
-void diagram(int64_t max, int64_t n, uint64_t val, char fill) {
-    for (int64_t i = max-1; i > n; i--) {
-        std::cout << "[        ]";
-    }
-    std::cout << "[" << std::setfill(fill) << std::setw(8) << val << "]";
-    for (int64_t i = n-1; i >= 0; i--) {
-        std::cout << "[        ]";
-    }
-    std::cout << std::endl;
-}
-
 Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
     upper_context = std::move(upper_ctx);
