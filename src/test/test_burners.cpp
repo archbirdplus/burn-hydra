@@ -15,7 +15,7 @@ protected:
     static CollatzBuilder prepareBuilder() {
         return CollatzBuilder()
             .set_flint_threads(1)
-            .consistent_collatz(3, 2, {0, 0})
+            .consistent_collatz(3, 2, {0, 1})
             .set_iterations(256)
             .set_table_size(2)
             .do_prune(true)

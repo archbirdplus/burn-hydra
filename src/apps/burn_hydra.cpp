@@ -8,10 +8,13 @@ typedef struct count_context {
 
 user_object_t count_parities(void* context, user_object_t x, uint64_t residue) {
     const auto ctx = (count_context_t*) context;
-    if (residue & 1) {
-        ctx->odd += 1;
-    } else {
-        ctx->even += 1;
+    for (int i = 0; i < 16; i++) {
+        if (residue & 1) {
+            ctx->odd += 1;
+        } else {
+            ctx->even += 1;
+        }
+        residue = residue*3/2;
     }
     return x;
 }
@@ -32,8 +35,8 @@ int main() {
         .from_argv()
         .consistent_collatz(3, 2, {0, 1})
         .set_initial(3)
-        .set_table_size(2)
-        .scan_fn(count_fn, 2, false)
+        .set_table_size(16)
+        .scan_fn(count_fn, 16, false)
         .scan_context(&ctx);
     s.init().run();
 
