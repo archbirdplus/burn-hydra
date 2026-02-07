@@ -100,17 +100,23 @@ void Context::run() {
     // possibly something like this?
     // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
     // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
+    std::cout << "Chose communicator: MPI" << std::endl;
     auto outer = std::unique_ptr<Burner_MPI>(new Burner_MPI(this));
     std::unique_ptr<Basecase_simple> basecase;
     if (!task.scan_config || task.scan_config->scan_block_size == task.table_size) {
-        std::cout << "Chose table basecase" << std::endl;
+        std::cout << "Chose basecase: table" << std::endl;
         basecase = std::unique_ptr<Basecase_table>(new Basecase_table(this));
     } else if (task.collatz.m == (1 << n_flog(task.collatz.m, 2))) {
+        std::cout << "Chose basecase: m2exp" << std::endl;
         basecase = std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(this));
     } else {
+        std::cout << "Chose basecase: simple" << std::endl;
         basecase = std::unique_ptr<Basecase_simple>(new Basecase_simple(this));
     }
+    std::cout << "Chose chain: simple" << std::endl;
     auto burner = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(this, std::move(outer), std::move(basecase)));
+    // std::cout << "Chose chain: OpenMP" << std::endl;
+    // auto burner = std::unique_ptr<Burner_openmp>(new Burner_openmp(this, std::move(outer), std::move(basecase)));
 
     flint_set_num_threads(task.flint_threads);
     uint64_t iterations = this->task.max_iterations;
