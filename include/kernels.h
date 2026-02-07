@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "state.h"
+#include "locked_fmpz.h"
 
 class Basecase_simple {
 public:
@@ -38,7 +39,13 @@ public:
 
 class Burner_MPI;
 
-class Burner_singlethreaded {
+class Burner {
+public:
+    virtual ~Burner() {}
+    virtual uint64_t step() {}
+};
+
+class Burner_singlethreaded: Burner {
 public:
     Context* global_context;
     std::unique_ptr<Burner_MPI> upper_context;
@@ -52,7 +59,7 @@ public:
     vec<timed_fmpz> overcarry;
 
     Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
-    ~Burner_singlethreaded();
+    virtual ~Burner_singlethreaded();
 
     void tick(uint64_t n);
 
@@ -67,9 +74,38 @@ public:
     void recurse(int64_t n);
 
     // TODO: partial steps up to max
-    uint64_t step();
+    virtual uint64_t step();
 };
 
+class Burner_openmp: public Burner {
+public:
+    Context* global_context;
+    std::unique_ptr<Burner_MPI> upper_context;
+    std::unique_ptr<Basecase_simple> basecase_context;
+    uint64_t length;
+    vec<uint32_t> scale_delta;
+    vec<uint32_t> scale_next;
+    vec<uint32_t> scale_self;
+    vec<locked_fmpz> storage;
+    vec<locked_fmpz> undercarry;
+    vec<locked_fmpz> overcarry;
+
+    Burner_openmp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
+    void tick(uint64_t n);
+
+    void exchange(uint64_t n);
+
+    void pushR(uint64_t n);
+    void pullR(uint64_t n);
+
+    void pushL(uint64_t n);
+    void pullL(uint64_t n);
+
+    void recurse(int64_t n);
+
+    // TODO: partial steps up to max
+    uint64_t step() override;
+};
 
 //pushR actually depends on basecasetype
 class Burner_MPI {

@@ -10,6 +10,7 @@ timed_fmpz::timed_fmpz() {
 
 void timed_fmpz::clear() {
     fmpz_clear(&fmpz);
+    iterations = -1;
 }
 
 bool timed_fmpz_synced(const timed_fmpz& lhs, const timed_fmpz& rhs) {
@@ -17,6 +18,7 @@ bool timed_fmpz_synced(const timed_fmpz& lhs, const timed_fmpz& rhs) {
 }
 
 bool timed_fmpz_check_synced(const timed_fmpz& lhs, const timed_fmpz& rhs) {
+    // std::cerr << "lhs " << lhs.iterations << " and rhs " << rhs.iterations << std::endl;
     if (!timed_fmpz_synced(lhs, rhs)) {
         std::cerr << "Two timed_fmpz's are not synced: lhs at " << lhs.iterations << ", rhs at " << rhs.iterations << std::endl;
         return false;

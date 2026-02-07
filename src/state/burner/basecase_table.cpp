@@ -36,7 +36,8 @@ void Basecase_table::step(timed_fmpz* x_import) {
         }
         fmpz_fdiv_q_ui(stored, stored, mS);
         fmpz_mul_ui(stored, stored, rS);
-        fmpz_add_ui(stored, stored, ((uint64_t*)global_ctx->workspace.basecase_table)[residue]);
+        uint64_t update = ((uint64_t*)global_ctx->workspace.basecase_table)[residue];
+        fmpz_add_ui(stored, stored, update);
         // TODO: table steps
         // TODO: user scan memoization
         // TODO: 2exp optimizations
