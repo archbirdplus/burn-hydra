@@ -26,7 +26,7 @@ int main() {
 
     uint64_t iterations = 1<<30;
     auto s = CollatzBuilder()
-        .block_sizes({{8,9,10,11,12,13,14,15},{16,17},{18,19},{20,21},{22,23},{24,25},{26,27}}, {})
+        .block_sizes({{8,9,10,11,12,13,14,15,16,17},{18,19,20,21,22,23,24,25,26,28}}, {})
         .set_flint_threads(1)
         .do_prune(true)
         .set_iterations(iterations)
