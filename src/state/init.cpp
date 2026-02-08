@@ -118,6 +118,8 @@ void Context::run() {
     // std::cout << "Chose chain: OpenMP" << std::endl;
     // auto burner = std::unique_ptr<Burner_openmp>(new Burner_openmp(this, std::move(outer), std::move(basecase)));
 
+    metrics.start_timer(active_time);
+
     flint_set_num_threads(task.flint_threads);
     uint64_t iterations = this->task.max_iterations;
     while (iterations > 0) {
@@ -127,6 +129,11 @@ void Context::run() {
         }
         iterations -= taken;
     }
+
+    std::cout << "Finished: rank " << task.world_rank << std::endl;
+    metrics.stop_timer(active_time);
+    metrics.dump_as_rank(task.world_rank);
+    MPI_Finalize();
 
     // TODO: summarize (if -v) or output results/statistics
 }

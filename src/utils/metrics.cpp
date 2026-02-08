@@ -125,6 +125,9 @@ void Metrics::dump_as_rank(int rank) {
         return;
     }
     std::cout << "Dumping json timer intervals." << std::endl;
+    if (timers.intervals[active_time]->size() == 0) {
+        throw std::runtime_error("Internal error: did not begin active timer");
+    }
     const start_time_t first_start = (*timers.intervals[active_time])[0].start;
     if (rank > 0) {
         f << ",";

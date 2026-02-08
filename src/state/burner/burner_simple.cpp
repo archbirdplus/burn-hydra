@@ -79,8 +79,8 @@ void Burner_singlethreaded::exchange(uint64_t n) {
     // This needs to be synchronized.
     // These calls automatically handle calling to upper context.
     if (n > 0) pushL(n-1);
-    if (n <= length) pullR(n);
-    if (n <= length) pushR(n);
+    if (n < length) pullR(n);
+    if (n < length) pushR(n);
     if (n > 0) pullL(n-1);
 }
 
@@ -118,6 +118,7 @@ void Burner_singlethreaded::recurse(int64_t n) {
 }
 
 uint64_t Burner_singlethreaded::step() {
+    exchange(length);
     recurse(length-1);
     return 1 << scale_self[length-1];
 }
