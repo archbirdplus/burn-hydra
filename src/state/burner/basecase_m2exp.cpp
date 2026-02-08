@@ -1,6 +1,7 @@
 #include "flint/fmpz.h"
 #include "flint/ulong_extras.h"
 #include "kernels.h"
+#include <stdexcept>
 
 Basecase_m2exp::Basecase_m2exp(Context* ctx) : Basecase_simple(ctx) {
     mlog = n_flog(ctx->task.collatz.m, 2);

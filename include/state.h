@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <unordered_map>
 #include "flint/flint.h"
 #include "flint/fmpz.h"
 

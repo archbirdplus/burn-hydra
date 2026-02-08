@@ -8,6 +8,7 @@
 #include "init.h"
 #include "friendly_assert.h"
 #include <cassert>
+#include <stdexcept>
 
 #include "kernels.h"
 

@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cassert>
+#include <stdexcept>
 
 locked_fmpz::locked_fmpz() {
     value = timed_fmpz();

@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 #include "metrics.h"
 

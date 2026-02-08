@@ -1,5 +1,6 @@
 #include <flint/ulong_extras.h>
 #include <iostream>
+#include <stdexcept>
 
 #include "kernels.h"
 
