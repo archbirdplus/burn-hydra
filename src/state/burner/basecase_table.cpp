@@ -1,11 +1,17 @@
 #include "flint/fmpz.h"
 #include "flint/ulong_extras.h"
 #include "kernels.h"
+#include <stdexcept>
 
 Basecase_table::Basecase_table(Context* ctx) : Basecase_simple(ctx) {
     auto scan_config = global_ctx->task.scan_config;
     if (scan_config && scan_config->scan_block_size != ctx->task.table_size) {
         throw std::runtime_error("Cannot create table bascase: table size not aligned with scan block size");
+    }
+    uint64_t n = (uint64_t) 1 << power;
+    uint64_t step_size = global_ctx->task.table_size;
+    if (n % step_size != 0) {
+        throw std::runtime_error("Cannot use this step size: it does not divide the basecase size");
     }
 }
 
@@ -16,9 +22,6 @@ void Basecase_table::step(timed_fmpz* x_import) {
 
     uint64_t n = (uint64_t) 1 << power;
     uint64_t step_size = global_ctx->task.table_size;
-    if (n % step_size != 0) {
-        throw std::runtime_error("Cannot use this step size: it does not divide the basecase size");
-    }
     uint64_t rS = n_pow(global_ctx->task.collatz.r, step_size);
     uint64_t mS = n_pow(global_ctx->task.collatz.m, step_size);
 
