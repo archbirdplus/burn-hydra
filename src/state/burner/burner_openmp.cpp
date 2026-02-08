@@ -90,8 +90,8 @@ void Burner_openmp::exchange(uint64_t n) {
             }
         }
     } else {
-        if (n <= length) pullR(n);
-        if (n <= length) pushR(n);
+        if (n < length) pullR(n);
+        if (n < length) pushR(n);
     }
 }
 
@@ -135,6 +135,7 @@ void Burner_openmp::recurse(int64_t n) {
 }
 
 uint64_t Burner_openmp::step() {
+    exchange(length);
     recurse(length-1);
     return 1 << scale_self[length-1];
 }

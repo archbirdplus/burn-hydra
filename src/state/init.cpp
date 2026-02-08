@@ -113,8 +113,14 @@ void Context::run() {
         std::cout << "Chose basecase: simple" << std::endl;
         basecase = std::unique_ptr<Basecase_simple>(new Basecase_simple(this));
     }
-    std::cout << "Chose chain: simple" << std::endl;
-    auto burner = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(this, std::move(outer), std::move(basecase)));
+    std::unique_ptr<Burner> burner;
+    if ((1<<n_flog(task.collatz.m, 2)) == task.collatz.m) {
+        std::cout << "Chose chain: m2exp" << std::endl;
+        burner = std::unique_ptr<Burner_m2exp>(new Burner_m2exp(this, std::move(outer), std::move(basecase)));
+    } else {
+        std::cout << "Chose chain: simple" << std::endl;
+        burner = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(this, std::move(outer), std::move(basecase)));
+    }
     // std::cout << "Chose chain: OpenMP" << std::endl;
     // auto burner = std::unique_ptr<Burner_openmp>(new Burner_openmp(this, std::move(outer), std::move(basecase)));
 

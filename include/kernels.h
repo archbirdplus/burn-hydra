@@ -42,10 +42,10 @@ class Burner_MPI;
 class Burner {
 public:
     virtual ~Burner() {}
-    virtual uint64_t step() {}
+    virtual uint64_t step() { return 0; }
 };
 
-class Burner_singlethreaded: Burner {
+class Burner_singlethreaded: public Burner {
 public:
     Context* global_context;
     std::unique_ptr<Burner_MPI> upper_context;
@@ -61,20 +61,35 @@ public:
     Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
     virtual ~Burner_singlethreaded();
 
-    void tick(uint64_t n);
+    virtual void tick(uint64_t n);
 
-    void exchange(uint64_t n);
+    virtual void exchange(uint64_t n);
 
-    void pushR(uint64_t n);
-    void pullR(uint64_t n);
+    virtual void pushR(uint64_t n);
+    virtual void pullR(uint64_t n);
 
-    void pushL(uint64_t n);
-    void pullL(uint64_t n);
+    virtual void pushL(uint64_t n);
+    virtual void pullL(uint64_t n);
 
-    void recurse(int64_t n);
+    virtual void recurse(int64_t n);
 
     // TODO: partial steps up to max
     virtual uint64_t step();
+};
+
+class Burner_m2exp: public Burner_singlethreaded {
+public:
+    uint64_t mlog;
+    Burner_m2exp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
+    virtual ~Burner_m2exp();
+
+    virtual void tick(uint64_t n) override;
+
+    virtual void pushL(uint64_t n) override;
+
+    virtual void recurse(int64_t n) override;
+
+    uint64_t step() override;
 };
 
 class Burner_openmp: public Burner {
