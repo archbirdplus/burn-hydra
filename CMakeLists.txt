@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.20)
 
 # find_package(MPI)
 
@@ -27,6 +27,9 @@ endif()
 if(FAILED_DEPS)
     message(FATAL_ERROR "Dependencies were not found.")
 endif()
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error LANGUAGES CXX)
 
 project(BurnHydra)
 include(CTest)
@@ -64,6 +67,13 @@ target_sources(BigCollatz
     BASE_DIRS include
     FILES include/fluent.h include/state.h
 )
+
+if(ipo_supported)
+    message(STATUS "IPO / LTO enabled")
+    set_property(TARGET BigCollatz PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+else()
+    message(STATUS "IPO / LTO not supported: <${ipo_error}>")
+endif()
 
 equip(BigCollatz)
 
