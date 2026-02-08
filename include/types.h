@@ -4,6 +4,7 @@
 #include <optional>
 #include <flint/fmpz.h>
 #include <cassert>
+#include <cstdint>
 
 template <class T>
 using vec = std::vector<T>;
