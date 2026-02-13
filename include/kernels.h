@@ -106,6 +106,7 @@ public:
     vec<locked_fmpz> overcarry;
 
     Burner_openmp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
+    ~Burner_openmp();
     void tick(uint64_t n);
 
     void exchange(uint64_t n);

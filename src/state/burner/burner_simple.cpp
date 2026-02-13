@@ -29,11 +29,13 @@ Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_pt
 }
 
 Burner_singlethreaded::~Burner_singlethreaded() {
-    for (uint64_t i = 0; i < length+1; i++) {
+    for (uint64_t i = 0; i < storage.size(); i++) {
         storage[i].clear();
     }
-    for (uint64_t i = 0; i < length+1; i++) {
+    for (uint64_t i = 0; i < undercarry.size(); i++) {
         undercarry[i].clear();
+    }
+    for (uint64_t i = 0; i < overcarry.size(); i++) {
         overcarry[i].clear();
     }
 }

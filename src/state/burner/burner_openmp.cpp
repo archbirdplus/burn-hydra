@@ -25,6 +25,18 @@ Burner_openmp::Burner_openmp(Context* global_ctx, std::unique_ptr<Burner_MPI> up
     }
 }
 
+Burner_openmp::~Burner_openmp() {
+    for (uint64_t i = 0; i < storage.size(); i++) {
+        storage[i].clear();
+    }
+    for (uint64_t i = 0; i < undercarry.size(); i++) {
+        undercarry[i].clear();
+    }
+    for (uint64_t i = 0; i < overcarry.size(); i++) {
+        overcarry[i].clear();
+    }
+}
+
 void Burner_openmp::tick(uint64_t n) {
     Workspace* ws = &global_context->workspace;
 
