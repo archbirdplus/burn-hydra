@@ -33,8 +33,8 @@ void Burner_singlethreaded::tick(uint64_t n) {
     Workspace* ws = &global_context->workspace;
 
     uint64_t scale = scale_next[n];
-    fmpz_mul(&storage[n].fmpz, &storage[n].fmpz, &(ws->pR[scale]));
-    fmpz_fdiv_qr(&storage[n].fmpz, &undercarry[n].fmpz, &storage[n].fmpz, &(ws->pM[scale]));
+    fmpz_mul(&storage[n].value, &storage[n].value, &(ws->pR[scale]));
+    fmpz_fdiv_qr(&storage[n].value, &undercarry[n].value, &storage[n].value, &(ws->pM[scale]));
     storage[n].iterations += (uint64_t) 1 << scale;
     undercarry[n].iterations = storage[n].iterations;
     // set undercarry[n]
@@ -59,7 +59,7 @@ void Burner_singlethreaded::pullR(uint64_t n) {
     }
     // assume corresponding pushL previously happened, setting overcarry[n]
     ASSERT_SYNCED(storage[n], overcarry[n]);
-    fmpz_add(&storage[n].fmpz, &storage[n].fmpz, &overcarry[n].fmpz);
+    fmpz_add(&storage[n].value, &storage[n].value, &overcarry[n].value);
 }
 
 // Exchanges between nodes n <--> n-1
@@ -80,7 +80,7 @@ void Burner_singlethreaded::pushL(uint64_t n) {
 
     Workspace* ws = &global_context->workspace;
 
-    fmpz_fdiv_qr(&overcarry[n+1].fmpz, &storage[n].fmpz, &storage[n].fmpz, &(ws->pM[scale_self[n]]));
+    fmpz_fdiv_qr(&overcarry[n+1].value, &storage[n].value, &storage[n].value, &(ws->pM[scale_self[n]]));
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
     if ((uint64_t) n == length-1) {
@@ -95,7 +95,7 @@ void Burner_singlethreaded::pullL(uint64_t n) {
     }
     // assume it was otherwise inserted into undercarry[n+1]
     ASSERT_SYNCED(storage[n], undercarry[n+1]);
-    fmpz_add(&storage[n].fmpz, &storage[n].fmpz,&undercarry[n+1].fmpz);
+    fmpz_add(&storage[n].value, &storage[n].value,&undercarry[n+1].value);
 }
 
 void Burner_singlethreaded::recurse(int64_t n) {

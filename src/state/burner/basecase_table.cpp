@@ -16,9 +16,9 @@ Basecase_table::Basecase_table(Context* ctx) : Basecase_simple(ctx) {
 }
 
 void Basecase_table::step(timed_fmpz* x_import) {
-    fmpz* stored = &storage.fmpz;
+    fmpz* stored = &storage.value;
     ASSERT_SYNCED(storage, *x_import);
-    fmpz_add(stored, stored, &x_import->fmpz);
+    fmpz_add(stored, stored, &x_import->value);
 
     uint64_t n = (uint64_t) 1 << power;
     uint64_t step_size = global_ctx->task.table_size;

@@ -37,17 +37,17 @@ public:
 
 void expect_timed_eq(timed_fmpz& lhs, timed_fmpz& rhs) {
     EXPECT_EQ(lhs.iterations, rhs.iterations) << "integers are not synced";
-    char* strL = fmpz_get_str(NULL, 10, &lhs.fmpz);
-    char* strR = fmpz_get_str(NULL, 10, &rhs.fmpz);
-    EXPECT_TRUE(fmpz_equal(&lhs.fmpz, &rhs.fmpz)) << strL << " is not equal to " << strR;
+    char* strL = fmpz_get_str(NULL, 10, &lhs.value);
+    char* strR = fmpz_get_str(NULL, 10, &rhs.value);
+    EXPECT_TRUE(fmpz_equal(&lhs.value, &rhs.value)) << strL << " is not equal to " << strR;
     free(strL);
     free(strR);
 }
 
 void expect_timed_eq_val_time(timed_fmpz& lhs, uint64_t rhs, uint64_t time) {
     EXPECT_EQ(lhs.iterations, time) << "integers are not synced";
-    char* str = fmpz_get_str(NULL, 10, &lhs.fmpz);
-    EXPECT_TRUE(fmpz_equal_ui(&lhs.fmpz, rhs)) << str << " is not equal to " << str;
+    char* str = fmpz_get_str(NULL, 10, &lhs.value);
+    EXPECT_TRUE(fmpz_equal_ui(&lhs.value, rhs)) << str << " is not equal to " << str;
     free(str);
 }
 
@@ -146,19 +146,19 @@ TEST_F(BurnerTest, CheckFinalValue) {
     // not necessarily happen on the last iteration) but undecarries
     // are always extracted.
     fmpz_one_2exp(tmp, 0);
-    fmpz_addmul(&result.fmpz, &burner.basecase_context->storage.fmpz, tmp);
-    fmpz_addmul(&result.fmpz, &burner.undercarry[0].fmpz, tmp);
+    fmpz_addmul(&result.value, &burner.basecase_context->storage.value, tmp);
+    fmpz_addmul(&result.value, &burner.undercarry[0].value, tmp);
     fmpz_one_2exp(tmp, (1<<4)*1);
-    fmpz_addmul(&result.fmpz, &burner.storage[0].fmpz, tmp);
-    fmpz_addmul(&result.fmpz, &burner.undercarry[1].fmpz, tmp);
+    fmpz_addmul(&result.value, &burner.storage[0].value, tmp);
+    fmpz_addmul(&result.value, &burner.undercarry[1].value, tmp);
     fmpz_one_2exp(tmp, (1<<4)*2);
-    fmpz_addmul(&result.fmpz, &burner.storage[1].fmpz, tmp);
-    fmpz_addmul(&result.fmpz, &burner.undercarry[2].fmpz, tmp);
+    fmpz_addmul(&result.value, &burner.storage[1].value, tmp);
+    fmpz_addmul(&result.value, &burner.undercarry[2].value, tmp);
     fmpz_one_2exp(tmp, (1<<4)*2+(1<<5));
-    fmpz_addmul(&result.fmpz, &burner.storage[2].fmpz, tmp);
+    fmpz_addmul(&result.value, &burner.storage[2].value, tmp);
 
     timed_fmpz answer = timed_fmpz();
-    fmpz_set_uiui(&answer.fmpz, 850778579484107, 1983176903683680569);
+    fmpz_set_uiui(&answer.value, 850778579484107, 1983176903683680569);
     expect_timed_eq(answer, result);
 }
 

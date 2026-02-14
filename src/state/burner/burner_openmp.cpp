@@ -13,9 +13,6 @@ Burner_openmp::Burner_openmp(Context* global_ctx, std::unique_ptr<Burner_MPI> up
     scale_delta = {};
     for (uint64_t i = 0; i < length; i++)
         scale_delta.push_back(scale_self[i] - scale_next[i]);
-    storage = {};
-    undercarry = {};
-    overcarry = {};
     for (uint64_t i = 0; i < length; i++) {
         storage.push_back(locked_fmpz());
     }
@@ -42,9 +39,9 @@ void Burner_openmp::tick(uint64_t n) {
 
     uint64_t scale = scale_next[n];
     timed_fmpz* stored = storage[n].lock_unknown();
-    fmpz_mul(&stored->fmpz, &stored->fmpz, &(ws->pR[scale]));
+    fmpz_mul(&stored->value, &stored->value, &(ws->pR[scale]));
     timed_fmpz* carry = undercarry[n].lock_unknown();
-    fmpz_fdiv_qr(&stored->fmpz, &carry->fmpz, &stored->fmpz, &(ws->pM[scale]));
+    fmpz_fdiv_qr(&stored->value, &carry->value, &stored->value, &(ws->pM[scale]));
     stored->iterations += (uint64_t) 1 << scale;
     carry->iterations = stored->iterations;
     storage[n].unlock();
@@ -75,7 +72,7 @@ void Burner_openmp::pullR(uint64_t n) {
     // assume corresponding pushL previously happened, setting overcarry[n]
     timed_fmpz* stored = storage[n].lock_unknown();
     timed_fmpz* carry = overcarry[n].lock(stored->iterations);
-    fmpz_add(&stored->fmpz, &stored->fmpz, &carry->fmpz);
+    fmpz_add(&stored->value, &stored->value, &carry->value);
     storage[n].unlock();
     overcarry[n].unlock();
 }
@@ -114,7 +111,7 @@ void Burner_openmp::pushL(uint64_t n) {
 
     timed_fmpz* stored = storage[n].lock_unknown();
     timed_fmpz* carry = overcarry[n+1].lock_unknown();
-    fmpz_fdiv_qr(&carry->fmpz, &stored->fmpz, &stored->fmpz, &(ws->pM[scale_self[n]]));
+    fmpz_fdiv_qr(&carry->value, &stored->value, &stored->value, &(ws->pM[scale_self[n]]));
     carry->iterations = stored->iterations;
     storage[n].unlock();
     // set overcarry[n+1]
@@ -131,7 +128,7 @@ void Burner_openmp::pullL(uint64_t n) {
         upper_context->pullL(carry);
     }
     timed_fmpz* stored = storage[n].lock(carry->iterations);
-    fmpz_add(&stored->fmpz, &stored->fmpz, &carry->fmpz);
+    fmpz_add(&stored->value, &stored->value, &carry->value);
     storage[n].unlock();
     undercarry[n+1].unlock();
 }

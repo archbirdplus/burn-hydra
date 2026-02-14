@@ -20,9 +20,9 @@ void Burner_m2exp::tick(uint64_t n) {
 
     uint64_t scale = scale_next[n];
     uint64_t p2 = mlog*((uint64_t)1<<scale);
-    fmpz_mul(&storage[n].fmpz, &storage[n].fmpz, &(ws->pR[scale]));
-    fmpz_fdiv_r_2exp(&undercarry[n].fmpz, &storage[n].fmpz, p2);
-    fmpz_fdiv_q_2exp(&storage[n].fmpz, &storage[n].fmpz, p2);
+    fmpz_mul(&storage[n].value, &storage[n].value, &(ws->pR[scale]));
+    fmpz_fdiv_r_2exp(&undercarry[n].value, &storage[n].value, p2);
+    fmpz_fdiv_q_2exp(&storage[n].value, &storage[n].value, p2);
     storage[n].iterations += (uint64_t) 1 << scale;
     undercarry[n].iterations = storage[n].iterations;
     // set undercarry[n]
@@ -33,8 +33,8 @@ void Burner_m2exp::pushL(uint64_t n) {
 
     uint64_t scale = scale_self[n];
     uint64_t p2 = mlog*((uint64_t)1<<scale);
-    fmpz_fdiv_q_2exp(&overcarry[n+1].fmpz, &storage[n].fmpz, p2);
-    fmpz_fdiv_r_2exp(&storage[n].fmpz, &storage[n].fmpz, p2);
+    fmpz_fdiv_q_2exp(&overcarry[n+1].value, &storage[n].value, p2);
+    fmpz_fdiv_r_2exp(&storage[n].value, &storage[n].value, p2);
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
     if ((uint64_t) n == length-1) {

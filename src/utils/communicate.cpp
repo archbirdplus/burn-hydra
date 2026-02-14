@@ -81,19 +81,19 @@ void receiveRight(Context* ctx, fmpz_t x) {
 }
 
 void sendLeft(Context* ctx, timed_fmpz* x) {
-    send_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, &x->fmpz);
+    send_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, &x->value);
     send_i64(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
 }
 void receiveLeft(Context* ctx, timed_fmpz* x) {
-    recv_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, &x->fmpz);
+    recv_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, &x->value);
     recv_i64(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
 }
 void sendRight(Context* ctx, timed_fmpz* x) {
-    send_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, &x->fmpz);
+    send_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, &x->value);
     send_i64(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
 }
 void receiveRight(Context* ctx, timed_fmpz* x) {
-    recv_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, &x->fmpz);
+    recv_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, &x->value);
     recv_i64(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
 }
 

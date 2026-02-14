@@ -33,7 +33,7 @@ typedef struct collatz_function {
 } collatz_function_t;
 
 typedef struct timed_fmpz {
-    fmpz fmpz;
+    fmpz value;
     int64_t iterations;
 
     timed_fmpz();

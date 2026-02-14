@@ -4,12 +4,12 @@
 #include <cassert>
 
 timed_fmpz::timed_fmpz() {
-    fmpz_init_set_ui(&fmpz, 0);
+    fmpz_init_set_ui(&value, 0);
     iterations = -1;
 }
 
 void timed_fmpz::clear() {
-    fmpz_clear(&fmpz);
+    fmpz_clear(&value);
     iterations = -1;
 }
 
@@ -18,7 +18,7 @@ timed_fmpz::~timed_fmpz() {
 }
 
 timed_fmpz::timed_fmpz(timed_fmpz&& other) noexcept {
-    fmpz_init_set_ui(&fmpz, 0);
+    fmpz_init_set_ui(&value, 0);
     iterations = other.iterations;
     other.iterations = -1;
 }
@@ -26,8 +26,8 @@ timed_fmpz::timed_fmpz(timed_fmpz&& other) noexcept {
 timed_fmpz& timed_fmpz::operator =(timed_fmpz&& other) noexcept {
     if (this != &other) {
         this->clear();
-        fmpz_init(&this->fmpz);
-        fmpz_swap(&this->fmpz, &other.fmpz);
+        fmpz_init(&this->value);
+        fmpz_swap(&this->value, &other.value);
         other.clear();
     }
     return *this;

@@ -11,17 +11,17 @@ Basecase_m2exp::Basecase_m2exp(Context* ctx) : Basecase_simple(ctx) {
 }
 
 void Basecase_m2exp::pushL(timed_fmpz* x_export) {
-    fmpz* stored = &storage.fmpz;
-    fmpz_fdiv_q_2exp(&x_export->fmpz, stored, mlog*(1<<power));
+    fmpz* stored = &storage.value;
+    fmpz_fdiv_q_2exp(&x_export->value, stored, mlog*(1<<power));
     x_export->iterations = storage.iterations;
     fmpz_fdiv_r_2exp(stored, stored, mlog*(1<<power));
 }
 
 // Takes import and writes to export.
 void Basecase_m2exp::step(timed_fmpz* x_import) {
-    fmpz* stored = &storage.fmpz;
+    fmpz* stored = &storage.value;
     ASSERT_SYNCED(storage, *x_import);
-    fmpz_add(stored, stored, &x_import->fmpz);
+    fmpz_add(stored, stored, &x_import->value);
 
     uint64_t n = (uint64_t) 1 << power;
     uint64_t r = global_ctx->task.collatz.r;
