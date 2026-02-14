@@ -45,6 +45,9 @@ double seconds(std::chrono::nanoseconds time) {
 }
 
 Metrics::Metrics(bool full_logs) {
+    for (int i = 0; i < _counter_classes; i++) {
+        this->counters.counter[i] = 0;
+    }
     for (int i = 0; i < _timer_classes; i++) {
         this->timers.total[i] = std::chrono::nanoseconds::zero();
         this->timers.last_start[i] = std::nullopt;
