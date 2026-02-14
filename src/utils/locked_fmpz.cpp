@@ -38,8 +38,9 @@ void locked_fmpz::unlock_check(int64_t time) {
 
 void locked_fmpz::clear() {
     omp_set_lock(&mutex);
-    value.clear();
+    value = timed_fmpz();
     omp_unset_lock(&mutex);
+    omp_destroy_lock(&mutex);
 }
 
 bool locked_fmpz_synced(locked_fmpz& lhs, locked_fmpz& rhs) {

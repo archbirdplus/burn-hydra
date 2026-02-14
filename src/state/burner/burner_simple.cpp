@@ -13,9 +13,6 @@ Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_pt
     scale_delta = {};
     for (uint64_t i = 0; i < length; i++)
         scale_delta.push_back(scale_self[i] - scale_next[i]);
-    storage = {};
-    undercarry = {};
-    overcarry = {};
     for (uint64_t i = 0; i < length; i++) {
         storage.push_back(timed_fmpz());
         storage.back().iterations = 0;
@@ -29,15 +26,7 @@ Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_pt
 }
 
 Burner_singlethreaded::~Burner_singlethreaded() {
-    for (uint64_t i = 0; i < storage.size(); i++) {
-        storage[i].clear();
-    }
-    for (uint64_t i = 0; i < undercarry.size(); i++) {
-        undercarry[i].clear();
-    }
-    for (uint64_t i = 0; i < overcarry.size(); i++) {
-        overcarry[i].clear();
-    }
+    
 }
 
 void Burner_singlethreaded::tick(uint64_t n) {

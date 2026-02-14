@@ -35,7 +35,7 @@ public:
     }
 };
 
-void expect_timed_eq(timed_fmpz lhs, timed_fmpz rhs) {
+void expect_timed_eq(timed_fmpz& lhs, timed_fmpz& rhs) {
     EXPECT_EQ(lhs.iterations, rhs.iterations) << "integers are not synced";
     char* strL = fmpz_get_str(NULL, 10, &lhs.fmpz);
     char* strR = fmpz_get_str(NULL, 10, &rhs.fmpz);
@@ -44,7 +44,7 @@ void expect_timed_eq(timed_fmpz lhs, timed_fmpz rhs) {
     free(strR);
 }
 
-void expect_timed_eq_val_time(timed_fmpz lhs, uint64_t rhs, uint64_t time) {
+void expect_timed_eq_val_time(timed_fmpz& lhs, uint64_t rhs, uint64_t time) {
     EXPECT_EQ(lhs.iterations, time) << "integers are not synced";
     char* str = fmpz_get_str(NULL, 10, &lhs.fmpz);
     EXPECT_TRUE(fmpz_equal_ui(&lhs.fmpz, rhs)) << str << " is not equal to " << str;

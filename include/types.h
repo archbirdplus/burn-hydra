@@ -37,6 +37,10 @@ typedef struct timed_fmpz {
     int64_t iterations;
 
     timed_fmpz();
+    ~timed_fmpz();
+    timed_fmpz(timed_fmpz&&) noexcept;
+    timed_fmpz& operator =(timed_fmpz&&) noexcept;
+
     void clear();
 } timed_fmpz;
 
