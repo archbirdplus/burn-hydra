@@ -121,7 +121,7 @@ TEST_F(BurnerTest, CountParitiesFancy) {
 
 TEST_F(BurnerTest, CheckFinalValue) {
     Context context = builder.block_sizes({{4, 5, 5}}, {}).init();
-    Burner_singlethreaded burner = Burner_singlethreaded(
+    auto burner = Burner_singlethreaded(
         &context,
         std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
         std::unique_ptr<Basecase_table>(new Basecase_table(&context))

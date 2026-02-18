@@ -131,13 +131,14 @@ void Context::run() {
     // auto burner = std::unique_ptr<Burner_openmp>(new Burner_openmp(this, std::move(outer), std::move(basecase)));
 
     flint_set_num_threads(task->flint_threads);
-    uint64_t iterations = this->task->max_iterations;
-    while (iterations > 0) {
+    uint64_t destination = this->task->max_iterations;
+    uint64_t iteration = 0;
+    while (iteration < destination) {
         uint64_t taken = burner->step();
-        if (iterations < taken) {
+        if (iteration + taken > destination) {
              throw std::runtime_error("Internal error: took too many steps");
         }
-        iterations -= taken;
+        iteration += taken;
     }
 
     std::cout << "Finished: rank " << task->world_rank << std::endl;
