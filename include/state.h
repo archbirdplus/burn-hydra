@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <memory>
 #include <unordered_map>
 #include "flint/flint.h"
 #include "flint/fmpz.h"
@@ -48,16 +49,16 @@ public:
     // table index -> user object
     vec<uint64_t> scan_object_from_index;
 
-    Workspace(const Task task);
+    Workspace(const Task *task);
 };
 
 // Context handles the memory needed at the time of execution: a task and its structures.
 class Context {
 private:
 public:
-    Task task;
-    Workspace workspace;
-    Metrics metrics;
+    std::unique_ptr<Task> task;
+    std::unique_ptr<Workspace> workspace;
+    std::unique_ptr<Metrics> metrics;
 
     Context(const CollatzBuilder* setup); // init from problem statement
 

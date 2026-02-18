@@ -68,39 +68,39 @@ void recv_fmpz(Metrics* metrics, int rank, int d, fmpz_t fx) {
 }
 
 void sendLeft(Context* ctx, fmpz_t x) {
-    send_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, x);
+    send_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, x);
 }
 void receiveLeft(Context* ctx, fmpz_t x) {
-    recv_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, x);
+    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, x);
 }
 void sendRight(Context* ctx, fmpz_t x) {
-    send_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, x);
+    send_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, x);
 }
 void receiveRight(Context* ctx, fmpz_t x) {
-    recv_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, x);
+    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, x);
 }
 
 void sendLeft(Context* ctx, timed_fmpz* x) {
-    send_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, &x->value);
-    send_i64(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
+    send_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->value);
+    send_i64(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->iterations);
 }
 void receiveLeft(Context* ctx, timed_fmpz* x) {
-    recv_fmpz(&ctx->metrics, ctx->task.world_rank+1, +1, &x->value);
-    recv_i64(&ctx->metrics, ctx->task.world_rank+1, +1, &x->iterations);
+    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->value);
+    recv_i64(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->iterations);
 }
 void sendRight(Context* ctx, timed_fmpz* x) {
-    send_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, &x->value);
-    send_i64(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
+    send_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->value);
+    send_i64(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->iterations);
 }
 void receiveRight(Context* ctx, timed_fmpz* x) {
-    recv_fmpz(&ctx->metrics, ctx->task.world_rank-1, -1, &x->value);
-    recv_i64(&ctx->metrics, ctx->task.world_rank-1, -1, &x->iterations);
+    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->value);
+    recv_i64(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->iterations);
 }
 
 
 void gather(Context* ctx, fmpz_t fitem, fmpz* buffer, int root) {
-    ctx->metrics.start_timer(gather_communication);
-    const int world_size = ctx->task.world_size;
+    ctx->metrics->start_timer(gather_communication);
+    const int world_size = ctx->task->world_size;
     // Despite our willingness to do it, GMP, FLINT, and MPI all
     // count object sizes in `int`- the signed 32 bit integer.
     // By specifying `long`s we can get roughly 2^38 sized messages,
@@ -121,7 +121,7 @@ void gather(Context* ctx, fmpz_t fitem, fmpz* buffer, int root) {
     int send_limb_count_int = static_cast<int>(send_limb_count);
     MPI_Gather(&send_limb_count_int, 1, MPI_INT, sizesbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
     uint64_t* limbs = nullptr;
-    if (ctx->task.world_rank == root) {
+    if (ctx->task->world_rank == root) {
         displs[0] = 0;
         for (int i = 1; i < world_size; i++) {
             displs[i] = displs[i-1] + sizesbuf[i-1];
@@ -129,7 +129,7 @@ void gather(Context* ctx, fmpz_t fitem, fmpz* buffer, int root) {
         limbs = (uint64_t*) calloc(displs[world_size-1] + sizesbuf[world_size-1], sizeof(uint64_t));
     }
     MPI_Gatherv(sendbuf, send_limb_count_int, MPI_LONG, limbs, sizesbuf, displs, MPI_LONG, root, MPI_COMM_WORLD);
-    if (ctx->task.world_rank == root) {
+    if (ctx->task->world_rank == root) {
         for (int i = 0; i < world_size; i++) {
             fmpz* rop = &buffer[i];
             _fmpz_promote(rop);
@@ -140,7 +140,7 @@ void gather(Context* ctx, fmpz_t fitem, fmpz* buffer, int root) {
     free(sendbuf);
     free(displs);
     free(sizesbuf);
-    ctx->metrics.stop_timer(gather_communication);
+    ctx->metrics->stop_timer(gather_communication);
 }
 
 

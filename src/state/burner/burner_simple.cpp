@@ -30,7 +30,7 @@ Burner_singlethreaded::~Burner_singlethreaded() {
 }
 
 void Burner_singlethreaded::tick(uint64_t n) {
-    Workspace* ws = &global_context->workspace;
+    Workspace* ws = global_context->workspace.get();
 
     uint64_t scale = scale_next[n];
     fmpz_mul(&storage[n].value, &storage[n].value, &(ws->pR[scale]));
@@ -78,7 +78,7 @@ void Burner_singlethreaded::exchange(uint64_t n) {
 void Burner_singlethreaded::pushL(uint64_t n) {
     if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
 
-    Workspace* ws = &global_context->workspace;
+    Workspace* ws = global_context->workspace.get();
 
     fmpz_fdiv_qr(&overcarry[n+1].value, &storage[n].value, &storage[n].value, &(ws->pM[scale_self[n]]));
     overcarry[n+1].iterations = storage[n].iterations;

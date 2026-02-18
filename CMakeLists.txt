@@ -54,7 +54,7 @@ target_sources(BigCollatz
     PRIVATE
     src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
     src/state/burner/burner_mpi.cpp
-    src/state/burner/burner_simple.cpp src/state/burner/burner_openmp.cpp
+    src/state/burner/burner_simple.cpp # src/state/burner/burner_openmp.cpp
         src/state/burner/burner_m2exp.cpp
     src/state/burner/basecase_simple.cpp src/state/burner/basecase_m2exp.cpp
         src/state/burner/basecase_table.cpp

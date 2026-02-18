@@ -79,18 +79,20 @@ vec<fmpz> create_2exp_powers(uint64_t r, uint64_t n) {
     return pR;
 }
 
-Workspace::Workspace(const Task task) {
-    vec<uint64_t> my_blocks = task.block_sizes[task.world_rank];
+Workspace::Workspace(const Task *task) {
+    vec<uint64_t> my_blocks = task->block_sizes[task->world_rank];
     uint64_t largest_size = std::max_element(my_blocks.begin(), my_blocks.end())[0];
-    pR = create_2exp_powers(task.collatz.r, largest_size);
-    pM = create_2exp_powers(task.collatz.m, largest_size);
+    pR = create_2exp_powers(task->collatz.r, largest_size);
+    pM = create_2exp_powers(task->collatz.m, largest_size);
     // TODO: automatically configure table size
-    basecase_table = create_basecase_table<uint64_t>(task.collatz, task.table_size);
+    basecase_table = create_basecase_table<uint64_t>(task->collatz, task->table_size);
 }
 
 // TODO: really nasty constructor
-Context::Context(const CollatzBuilder* setup) : task(setup), workspace(task), metrics(true) {
-    
+Context::Context(const CollatzBuilder* setup) {
+    metrics = std::unique_ptr<Metrics>(new Metrics(true));
+    task = std::unique_ptr<Task>(new Task(setup));
+    workspace = std::unique_ptr<Workspace>(new Workspace(task.get()));
 }
 
 void Context::run() {
@@ -104,10 +106,10 @@ void Context::run() {
     std::cout << "Chose communicator: MPI" << std::endl;
     auto outer = std::unique_ptr<Burner_MPI>(new Burner_MPI(this));
     std::unique_ptr<Basecase_simple> basecase;
-    if (!task.scan_config || task.scan_config->scan_block_size == task.table_size) {
+    if (!task->scan_config || task->scan_config->scan_block_size == task->table_size) {
         std::cout << "Chose basecase: table" << std::endl;
         basecase = std::unique_ptr<Basecase_table>(new Basecase_table(this));
-    } else if (task.collatz.m == (1 << n_flog(task.collatz.m, 2))) {
+    } else if (task->collatz.m == (1 << n_flog(task->collatz.m, 2))) {
         std::cout << "Chose basecase: m2exp" << std::endl;
         basecase = std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(this));
     } else {
@@ -115,7 +117,7 @@ void Context::run() {
         basecase = std::unique_ptr<Basecase_simple>(new Basecase_simple(this));
     }
     std::unique_ptr<Burner> burner;
-    if ((1<<n_flog(task.collatz.m, 2)) == task.collatz.m) {
+    if ((1<<n_flog(task->collatz.m, 2)) == task->collatz.m) {
         std::cout << "Chose chain: m2exp" << std::endl;
         burner = std::unique_ptr<Burner_m2exp>(new Burner_m2exp(this, std::move(outer), std::move(basecase)));
     } else {
@@ -125,10 +127,10 @@ void Context::run() {
     // std::cout << "Chose chain: OpenMP" << std::endl;
     // auto burner = std::unique_ptr<Burner_openmp>(new Burner_openmp(this, std::move(outer), std::move(basecase)));
 
-    metrics.start_timer(active_time);
+    metrics->start_timer(active_time);
 
-    flint_set_num_threads(task.flint_threads);
-    uint64_t iterations = this->task.max_iterations;
+    flint_set_num_threads(task->flint_threads);
+    uint64_t iterations = this->task->max_iterations;
     while (iterations > 0) {
         uint64_t taken = burner->step();
         if (iterations < taken) {
@@ -137,9 +139,9 @@ void Context::run() {
         iterations -= taken;
     }
 
-    std::cout << "Finished: rank " << task.world_rank << std::endl;
-    metrics.stop_timer(active_time);
-    metrics.dump_as_rank(task.world_rank);
+    std::cout << "Finished: rank " << task->world_rank << std::endl;
+    metrics->stop_timer(active_time);
+    metrics->dump_as_rank(task->world_rank);
     MPI_Finalize();
 
     // TODO: summarize (if -v) or output results/statistics

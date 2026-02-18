@@ -5,8 +5,8 @@
 #include "kernels.h"
 
 Burner_m2exp::Burner_m2exp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) : Burner_singlethreaded(global_ctx, std::move(upper_ctx), std::move(basecase_ctx)) {
-    mlog = n_flog(global_ctx->task.collatz.m, 2);
-    if (global_ctx->task.collatz.m != (1<<mlog)) {
+    mlog = n_flog(global_ctx->task->collatz.m, 2);
+    if (global_ctx->task->collatz.m != (1<<mlog)) {
         throw std::runtime_error("Failed to construct burner m2exp context because m was not a power of 2");
     }
 }
@@ -16,7 +16,7 @@ Burner_m2exp::~Burner_m2exp() {
 }
 
 void Burner_m2exp::tick(uint64_t n) {
-    Workspace* ws = &global_context->workspace;
+    Workspace* ws = global_context->workspace.get();
 
     uint64_t scale = scale_next[n];
     uint64_t p2 = mlog*((uint64_t)1<<scale);
