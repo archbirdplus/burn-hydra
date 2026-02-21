@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <iostream>
+#include <utility>
 
 #include "fluent.h"
 #include "state.h"
@@ -118,27 +119,52 @@ TEST_F(BurnerTest, CountParitiesFancy) {
     EXPECT_EQ(counts.odd, 525068);
 }
 
+template <typename T>
+class BurnerTypesTest: public BurnerTest {
 
-TEST_F(BurnerTest, CheckFinalValue) {
-    Context context = builder.block_sizes({{4, 5, 5}}, {}).init();
-    auto burner = Burner_singlethreaded(
+};
+
+TYPED_TEST_SUITE_P(BurnerTypesTest);
+
+using BurnerTypes = ::testing::Types<
+    std::tuple<Burner_singlethreaded, Basecase_simple>,
+    std::tuple<Burner_singlethreaded, Basecase_m2exp>,
+    std::tuple<Burner_singlethreaded, Basecase_table>,
+    std::tuple<Burner_m2exp, Basecase_simple>,
+    std::tuple<Burner_m2exp, Basecase_m2exp>,
+    std::tuple<Burner_m2exp, Basecase_table>
+>;
+// Unfortunately, it seems we can't have such a loop:
+// ::testing::Combine(::testing::Types<Burner_singlethreaded, Burner_m2exp>, ::testing::Types<Basecase_simple, Basecase_m2exp, Basecase_table>);
+
+TYPED_TEST_P(BurnerTypesTest, CheckFinalValue) {
+    uint64_t iteration_count = 192;
+    auto builder = CollatzBuilder()
+            .set_flint_threads(1)
+            .consistent_collatz(3, 2, {0, 1})
+            .set_iterations(iteration_count)
+            .set_table_size(2)
+            .do_prune(true)
+            .set_initial(3);
+    Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
+    // burner:   simple, m2exp
+    // basecase: simple, table, m2exp
+    // threaded should be an on-top layer
+    using BurnerType = typename std::tuple_element<0, TypeParam>::type;
+    using BaseType = typename std::tuple_element<1, TypeParam>::type;
+    auto burner = BurnerType(
         &context,
         std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
-        std::unique_ptr<Basecase_simple>(new Basecase_simple(&context))
+        std::unique_ptr<Basecase_simple>(new BaseType(&context))
     );
-    std::cout << "step 0" << std::endl;
-    burner.step();
-    std::cout << "step 1" << std::endl;
-    burner.step();
-    std::cout << "step 2" << std::endl;
-    burner.step();
-    std::cout << "step 3" << std::endl;
-    burner.step();
-    std::cout << "step 4" << std::endl;
-    burner.step();
-    std::cout << "step 5" << std::endl;
-    burner.step();
-    std::cout << "step 6" << std::endl;
+    uint64_t iterations = 0;
+    uint64_t steps = 0;
+    while(iterations < iteration_count) {
+        std::cout << "step " << steps << std::endl;
+        iterations += burner.step();
+        steps += 1;
+    }
+    EXPECT_EQ(iterations, iteration_count);
 
     fmpz_t tmp; fmpz_init(tmp);
     timed_fmpz result = timed_fmpz();
@@ -161,4 +187,9 @@ TEST_F(BurnerTest, CheckFinalValue) {
     fmpz_set_uiui(&answer.value, 850778579484107, 1983176903683680569);
     expect_timed_eq(answer, result);
 }
+
+REGISTER_TYPED_TEST_SUITE_P(BurnerTypesTest, CheckFinalValue);
+
+INSTANTIATE_TYPED_TEST_SUITE_P(Standard, BurnerTypesTest, BurnerTypes);
+
 

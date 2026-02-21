@@ -17,7 +17,6 @@ Basecase_table::Basecase_table(Context* ctx) : Basecase_simple(ctx) {
 }
 
 void Basecase_table::tick() {
-    std::cout << "tick table" << std::endl;
     fmpz* stored = &storage.value;
 
     uint64_t n = (uint64_t) 1 << power;
