@@ -1,6 +1,24 @@
 #include "kernels.h"
 #include <iostream>
 #include <iomanip>
+#include <cassert>
+
+void diagram(std::vector<timed_fmpz> &times, int last, int special) {
+    for (int64_t i = times.size(); i >= -1; i--) {
+        int64_t val = i < 0 ? last : times[i].iterations;
+        if (i < 0 && last == -69) break;
+        if (special == i)
+            std::cout << "%";
+        else
+            std::cout << "(";
+        std::cout << std::setfill(' ') << std::setw(8) << val;
+        if (special == i)
+            std::cout << "%";
+        else
+            std::cout << ")";
+    }
+    std::cout << std::endl;
+}
 
 Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
@@ -29,7 +47,11 @@ Burner_singlethreaded::~Burner_singlethreaded() {
     
 }
 
-void Burner_singlethreaded::tick(uint64_t n) {
+void Burner_singlethreaded::tick(int64_t n) {
+    if (n == -1) {
+        basecase_context->tick();
+        return;
+    }
     Workspace* ws = global_context->workspace.get();
 
     uint64_t scale = scale_next[n];
@@ -40,22 +62,20 @@ void Burner_singlethreaded::tick(uint64_t n) {
     // set undercarry[n]
 }
 
-void Burner_singlethreaded::pushR(uint64_t n) {
+void Burner_singlethreaded::pushR(int64_t n) {
     // assume tick previously happened, setting undercarry[n]
     if (n == 0) {
         if (upper_context->can_push_right)
             upper_context->pushR(&undercarry[0]);
-        else
-            basecase_context->step(&undercarry[0]);
+        else {}
     }
 }
 
-void Burner_singlethreaded::pullR(uint64_t n) {
+void Burner_singlethreaded::pullR(int64_t n) {
     if (n == 0) {
         if (upper_context->can_push_right)
             upper_context->pullR(&overcarry[0]);
-        else
-            basecase_context->pushL(&overcarry[0]);
+        else {}
     }
     // assume corresponding pushL previously happened, setting overcarry[n]
     ASSERT_SYNCED(storage[n], overcarry[n]);
@@ -65,17 +85,22 @@ void Burner_singlethreaded::pullR(uint64_t n) {
 // Exchanges between nodes n <--> n-1
 // At n=0, 0 <--> -1 indicates syncing right with the outer burner.
 // At n=length, length <--> length-1 indicates syncing left with the outer burner.
-void Burner_singlethreaded::exchange(uint64_t n) {
+void Burner_singlethreaded::exchange(int64_t n) {
     // By convention, pull to the left direction before pushing to the right direction.
     // This needs to be synchronized.
     // These calls automatically handle calling to upper context.
-    if (n > 0) pushL(n-1);
-    if (n < length) pullR(n);
-    if (n < length) pushR(n);
-    if (n > 0) pullL(n-1);
+    assert(n >= -1);
+    pushL(n-1);
+    if (n < (int64_t)length) pullR(n);
+    if (n < (int64_t)length) pushR(n);
+    pullL(n-1);
 }
 
-void Burner_singlethreaded::pushL(uint64_t n) {
+void Burner_singlethreaded::pushL(int64_t n) {
+    if (n == -1) {
+        basecase_context->pushL(&overcarry[0]);
+        return;
+    }
     if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
 
     Workspace* ws = global_context->workspace.get();
@@ -88,7 +113,11 @@ void Burner_singlethreaded::pushL(uint64_t n) {
     }
 }
 
-void Burner_singlethreaded::pullL(uint64_t n) {
+void Burner_singlethreaded::pullL(int64_t n) {
+    if (n == -1) {
+        basecase_context->pullL(&undercarry[0]);
+        return;
+    }
     if ((uint64_t) n == length-1) {
         if (!upper_context->can_push_left) return;
         upper_context->pullL(&undercarry[length]);
@@ -99,7 +128,10 @@ void Burner_singlethreaded::pullL(uint64_t n) {
 }
 
 void Burner_singlethreaded::recurse(int64_t n) {
-    if (n < 0) return;
+    if (n < 0) {
+        tick(n);
+        return;
+    };
     uint64_t pow = 1 << scale_delta[n];
     for (uint32_t i = 0; i < pow; i++) {
         exchange(n); // exchange can have multiple orders inside itself

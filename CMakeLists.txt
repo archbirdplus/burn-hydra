@@ -59,7 +59,7 @@ target_sources(BigCollatz
     src/state/burner/basecase_simple.cpp src/state/burner/basecase_m2exp.cpp
         src/state/burner/basecase_table.cpp
     src/utils/communicate.cpp src/utils/friendly_assert.cpp src/utils/metrics.cpp
-    src/utils/timed_fmpz.cpp src/utils/locked_fmpz.cpp
+    src/utils/timed_fmpz.cpp # src/utils/locked_fmpz.cpp
     include/communicate.h include/friendly_assert.h include/parse.h
 
     PUBLIC
@@ -68,12 +68,12 @@ target_sources(BigCollatz
     FILES include/fluent.h include/state.h
 )
 
-if(ipo_supported)
-    message(STATUS "IPO / LTO enabled")
-    set_property(TARGET BigCollatz PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-else()
-    message(STATUS "IPO / LTO not supported: <${ipo_error}>")
-endif()
+# if(ipo_supported)
+    # message(STATUS "IPO / LTO enabled")
+    # set_property(TARGET BigCollatz PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+# else()
+    # message(STATUS "IPO / LTO not supported: <${ipo_error}>")
+# endif()
 
 equip(BigCollatz)
 

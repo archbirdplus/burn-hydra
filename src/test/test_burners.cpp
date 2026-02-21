@@ -124,7 +124,7 @@ TEST_F(BurnerTest, CheckFinalValue) {
     auto burner = Burner_singlethreaded(
         &context,
         std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
-        std::unique_ptr<Basecase_table>(new Basecase_table(&context))
+        std::unique_ptr<Basecase_simple>(new Basecase_simple(&context))
     );
     std::cout << "step 0" << std::endl;
     burner.step();

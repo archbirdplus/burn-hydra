@@ -15,7 +15,11 @@ Burner_m2exp::~Burner_m2exp() {
     
 }
 
-void Burner_m2exp::tick(uint64_t n) {
+void Burner_m2exp::tick(int64_t n) {
+    if (n == -1) {
+        basecase_context->tick();
+        return;
+    }
     Workspace* ws = global_context->workspace.get();
 
     uint64_t scale = scale_next[n];
@@ -28,8 +32,12 @@ void Burner_m2exp::tick(uint64_t n) {
     // set undercarry[n]
 }
 
-void Burner_m2exp::pushL(uint64_t n) {
-    if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
+void Burner_m2exp::pushL(int64_t n) {
+    if (n == -1) {
+        basecase_context->pushL(&overcarry[0]);
+        return;
+    }
+    if (n == ((int64_t)length)-1 && !upper_context->can_push_left) return;
 
     uint64_t scale = scale_self[n];
     uint64_t p2 = mlog*((uint64_t)1<<scale);
@@ -37,18 +45,8 @@ void Burner_m2exp::pushL(uint64_t n) {
     fmpz_fdiv_r_2exp(&storage[n].value, &storage[n].value, p2);
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
-    if ((uint64_t) n == length-1) {
+    if (n == ((int64_t)length)-1) {
         upper_context->pushL(&overcarry[length]);
-    }
-}
-
-void Burner_m2exp::recurse(int64_t n) {
-    if (n < 0) return;
-    uint64_t pow = 1 << scale_delta[n];
-    for (uint32_t i = 0; i < pow; i++) {
-        exchange(n); // exchange can have multiple orders inside itself
-        tick(n); // tick and recurse can happen in parallel
-        recurse(n-1);
     }
 }
 

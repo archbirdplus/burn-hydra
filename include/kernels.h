@@ -17,7 +17,8 @@ public:
     virtual ~Basecase_simple();
 
     virtual void pushL(timed_fmpz* x_import);
-    virtual void step(timed_fmpz* x_export);
+    virtual void pullL(timed_fmpz* x_export);
+    virtual void tick();
 };
 
 class Basecase_m2exp: public Basecase_simple {
@@ -34,7 +35,7 @@ class Basecase_table: public Basecase_simple {
 public:
     Basecase_table(Context*);
 
-    void step(timed_fmpz* x_export);
+    virtual void tick() override;
 };
 
 class Burner_MPI;
@@ -61,15 +62,15 @@ public:
     Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
     virtual ~Burner_singlethreaded();
 
-    virtual void tick(uint64_t n);
+    virtual void tick(int64_t n);
 
-    virtual void exchange(uint64_t n);
+    virtual void exchange(int64_t n);
 
-    virtual void pushR(uint64_t n);
-    virtual void pullR(uint64_t n);
+    virtual void pushR(int64_t n);
+    virtual void pullR(int64_t n);
 
-    virtual void pushL(uint64_t n);
-    virtual void pullL(uint64_t n);
+    virtual void pushL(int64_t n);
+    virtual void pullL(int64_t n);
 
     virtual void recurse(int64_t n);
 
@@ -83,11 +84,11 @@ public:
     Burner_m2exp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
     virtual ~Burner_m2exp();
 
-    virtual void tick(uint64_t n) override;
+    virtual void tick(int64_t n) override;
 
-    virtual void pushL(uint64_t n) override;
+    virtual void pushL(int64_t n) override;
 
-    virtual void recurse(int64_t n) override;
+    // virtual void recurse(int64_t n) override;
 
     uint64_t step() override;
 };
@@ -107,15 +108,15 @@ public:
 
     Burner_openmp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx);
     ~Burner_openmp();
-    void tick(uint64_t n);
+    void tick(int64_t n);
 
-    void exchange(uint64_t n);
+    void exchange(int64_t n);
 
-    void pushR(uint64_t n);
-    void pullR(uint64_t n);
+    void pushR(int64_t n);
+    void pullR(int64_t n);
 
-    void pushL(uint64_t n);
-    void pullL(uint64_t n);
+    void pushL(int64_t n);
+    void pullL(int64_t n);
 
     void recurse(int64_t n);
 

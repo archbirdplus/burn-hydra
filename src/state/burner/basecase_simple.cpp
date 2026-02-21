@@ -17,14 +17,20 @@ Basecase_simple::~Basecase_simple() {
 void Basecase_simple::pushL(timed_fmpz* x_export) {
     fmpz* stored = &storage.value;
     fmpz_fdiv_qr(&x_export->value, stored, stored, &(global_ctx->workspace->pM[power]));
+    std::cout << "pushing iterations: " << storage.iterations << std::endl;
     x_export->iterations = storage.iterations;
 }
 
-// Takes import and writes to export.
-void Basecase_simple::step(timed_fmpz* x_import) {
-    fmpz* stored = &storage.value;
+void Basecase_simple::pullL(timed_fmpz* x_import) {
     ASSERT_SYNCED(storage, *x_import);
+    fmpz* stored = &storage.value;
     fmpz_add(stored, stored, &x_import->value);
+}
+
+// Takes import and writes to export.
+void Basecase_simple::tick() {
+    std::cout << "tick" << std::endl;
+    fmpz* stored = &storage.value;
 
     uint64_t n = (uint64_t) 1 << power;
     uint64_t r = global_ctx->task->collatz.r;
