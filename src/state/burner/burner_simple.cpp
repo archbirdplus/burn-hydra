@@ -3,23 +3,6 @@
 #include <iomanip>
 #include <cassert>
 
-void diagram(std::vector<timed_fmpz> &times, int last, int special) {
-    for (int64_t i = times.size(); i >= -1; i--) {
-        int64_t val = i < 0 ? last : times[i].iterations;
-        if (i < 0 && last == -69) break;
-        if (special == i)
-            std::cout << "%";
-        else
-            std::cout << "(";
-        std::cout << std::setfill(' ') << std::setw(8) << val;
-        if (special == i)
-            std::cout << "%";
-        else
-            std::cout << ")";
-    }
-    std::cout << std::endl;
-}
-
 Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
     upper_context = std::move(upper_ctx);
