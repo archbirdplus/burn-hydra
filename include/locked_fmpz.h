@@ -1,14 +1,16 @@
 #pragma once
 
-#include <omp.h>
+#include <mutex>
 #include <flint/fmpz.h>
 #include <utility>
 
 #include "types.h"
 
+using mutex_t = std::mutex;
+
 typedef struct locked_fmpz {
     timed_fmpz value;
-    omp_lock_t mutex;
+    mutex_t mutex;
 
     locked_fmpz();
     void clear();
