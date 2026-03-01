@@ -119,6 +119,54 @@ TEST_F(BurnerTest, CountParitiesFancy) {
     EXPECT_EQ(counts.odd, 525068);
 }
 
+TEST_F(BurnerTest, ThreadedResult) {
+    uint64_t iteration_count = 192;
+    auto builder = CollatzBuilder()
+            .set_flint_threads(1)
+            .consistent_collatz(3, 2, {0, 1})
+            .set_iterations(iteration_count)
+            .set_table_size(2)
+            .do_prune(true)
+            .set_initial(3);
+    Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
+    context.task->thread_breaks = {{}};
+    auto mpi_wrapper = Wrapper_MPI(&context);
+    auto threads_wrapper = Wrapper_threads(&context, &mpi_wrapper);
+    vec<Burner_simple*> burners = {};
+    for (uint64_t i = 0; i < context.task->thread_breaks[0].size() + 1; i++) {
+        auto burner = new Burner_simple(
+            &context,
+            &threads_wrapper,
+            std::unique_ptr<Basecase_simple>(new Basecase_simple(&context))
+        );
+        burners.push_back(std::move(burner)); // very broken: pointers should no longer work
+    }
+    mpi_wrapper.run_until(iteration_count);
+
+    fmpz_t tmp; fmpz_init(tmp);
+    timed_fmpz result = timed_fmpz();
+    fmpz_one_2exp(tmp, 0);
+    fmpz_addmul(&result.value, &burners[0]->basecase_context->storage.value, tmp);
+    fmpz_addmul(&result.value, &burners[0]->undercarry[0].value, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*1);
+    fmpz_addmul(&result.value, &burners[0]->storage[0].value, tmp);
+    fmpz_addmul(&result.value, &burners[1]->undercarry[0].value, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*2);
+    fmpz_addmul(&result.value, &burners[1]->storage[0].value, tmp);
+    fmpz_addmul(&result.value, &burners[2]->undercarry[0].value, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*2+(1<<5));
+    fmpz_addmul(&result.value, &burners[2]->storage[0].value, tmp);
+
+    timed_fmpz answer = timed_fmpz();
+    fmpz_set_uiui(&answer.value, 850778579484107, 1983176903683680569);
+    expect_timed_eq(answer, result);
+
+    for (auto burner : burners) {
+        delete burner;
+    }
+}
+
+
 template <typename T>
 class BurnerTypesTest: public BurnerTest {
 

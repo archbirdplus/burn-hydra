@@ -124,7 +124,8 @@ typedef struct thread_break {
     std::condition_variable hold_left;
 
     thread_break(uint64_t index);
-    thread_break(thread_break&& other);
+    thread_break(thread_break&& other) noexcept;
+    thread_break& operator =(thread_break&& other) noexcept;
 } thread_break_t;
 
 typedef struct thread_section {
@@ -139,10 +140,10 @@ public:
     Wrapper* upper_context;
     subscription_t subscription;
 
+    uint64_t thread_count;
     vec<Runnable*> thread_burners;
     vec<thread_section_t> thread_sections;
     vec<thread_break_t> thread_breaks;
-    vec<std::thread> threads;
 
     vec<uint32_t> thread_scales;
     uint32_t next_scale;

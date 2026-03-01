@@ -24,9 +24,9 @@ int main() {
     scan_fn_t count_fn = &count_parities;
     count_context_t ctx = { .even=0, .odd=0 };
 
-    uint64_t iterations = 1<<30;
+    uint64_t iterations = 1<<16;
     auto s = CollatzBuilder()
-        .block_sizes({{8,15},{16,17},{18,19},{20,21},{22,23},{24,25},{26,28}}, {})
+        .block_sizes({{8,9,10,11,12,13,14,15}}, {})
         .set_flint_threads(1)
         .do_prune(true)
         .set_iterations(iterations)
@@ -36,7 +36,9 @@ int main() {
         .set_table_size(16)
         .scan_fn(count_fn, 16, false)
         .scan_context(&ctx);
-    s.init().run();
+    Context c = s.init();
+    c.task->thread_breaks = {{0, 3, 6}};
+    c.run();
 
     std::cout << "Count after " << iterations << " iterations --" << std::endl;
     std::cout << "    even: " << ctx.even << std::endl;

@@ -10,10 +10,19 @@ thread_break::thread_break(uint64_t index) {
     overcarry = locked_fmpz();
 }
 
-thread_break::thread_break(thread_break&& other) {
+thread_break::thread_break(thread_break&& other) noexcept {
     right_high = other.right_high;
     std::swap(undercarry, other.undercarry);
     std::swap(overcarry, other.overcarry);
+}
+
+thread_break& thread_break::operator =(thread_break&& other) noexcept {
+    if (this != &other) {
+        right_high = other.right_high;
+        std::swap(undercarry, other.undercarry);
+        std::swap(overcarry, other.overcarry);
+    }
+    return *this;
 }
 
 Wrapper_threads::Wrapper_threads(Context* global_ctx, Wrapper* wrapper) {
@@ -24,6 +33,7 @@ Wrapper_threads::Wrapper_threads(Context* global_ctx, Wrapper* wrapper) {
     next_scale = subscription.next_scale;
     uint64_t this_low = 0;
     auto breaks = global_context->task->thread_breaks[global_context->task->world_rank];
+    thread_count = breaks.size() + 1;
     for (uint64_t i = 0; i <= breaks.size(); i++) {
         uint64_t this_high = i == breaks.size() ? thread_scales.size()-1 : breaks[i];
         if (i < breaks.size()) {
@@ -63,6 +73,7 @@ subscription_t Wrapper_threads::add_subscriber(Runnable* burner) {
 }
 
 void Wrapper_threads::run_thread(thread_section_t section, uint64_t end) {
+    std::cout << "section " << section.id << " of burners " << thread_burners.size() << std::endl;
     thread_burners[section.id]->run_until(end);
 }
 

@@ -38,10 +38,15 @@ Task::Task(const CollatzBuilder* setup) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
+    thread_breaks = {};
+
     // TODO: automatically configure block sizes based on problem size, node count
     // TODO: check valid block sizes
     if(setup->block_sizes_ramp.has_value()) {
         vecvec<uint64_t> ramp = *setup->block_sizes_ramp;
+        for (uint64_t i = 0; i < ramp.size(); i++) {
+            thread_breaks.push_back({});
+        }
         block_sizes = ramp;
         if((uint64_t)world_size > block_sizes.size()) {
             if(setup->block_sizes_plat.has_value()) {
@@ -49,6 +54,7 @@ Task::Task(const CollatzBuilder* setup) {
                 int ramp_size = ramp.size();
                 int plat_size = plat.size();
                 for(int i = ramp_size; i < world_size; i++) {
+                    thread_breaks.push_back({});
                     block_sizes.push_back(plat[(i - ramp_size) % plat_size]);
                 }
             } else friendly_concern(e, false, "Missing setup: block sizes plateau");
@@ -88,7 +94,6 @@ Workspace::Workspace(const Task *task) {
     basecase_table = create_basecase_table<uint64_t>(task->collatz, task->table_size);
 }
 
-// TODO: really nasty constructor
 Context::Context(const CollatzBuilder* setup) {
     metrics = std::unique_ptr<Metrics>(new Metrics(true));
     metrics->start_timer(active_time);
@@ -107,34 +112,46 @@ void Context::run() {
     // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
     // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
     std::cout << "Chose communicator: MPI" << std::endl;
-    auto outer = Wrapper_MPI(this);
+    auto wrapper_mpi = Wrapper_MPI(this);
+    auto wrapper_threads = Wrapper_threads(this, &wrapper_mpi);
+    Wrapper* outer = &wrapper_threads;
     std::unique_ptr<Basecase_simple> basecase;
-    if (!task->scan_config || task->scan_config->scan_block_size == task->table_size) {
-        std::cout << "Chose basecase: table" << std::endl;
-        basecase = std::unique_ptr<Basecase_table>(new Basecase_table(this));
-    } else if (task->collatz.m == (1 << n_flog(task->collatz.m, 2))) {
-        std::cout << "Chose basecase: m2exp" << std::endl;
-        basecase = std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(this));
-    } else {
-        std::cout << "Chose basecase: simple" << std::endl;
-        basecase = std::unique_ptr<Basecase_simple>(new Basecase_simple(this));
-    }
-    std::unique_ptr<Burner> burner;
-    if ((1<<n_flog(task->collatz.m, 2)) == task->collatz.m) {
-        std::cout << "Chose chain: m2exp" << std::endl;
-        burner = std::unique_ptr<Burner_m2exp>(new Burner_m2exp(this, &outer, std::move(basecase)));
-    } else {
-        std::cout << "Chose chain: simple" << std::endl;
-        burner = std::unique_ptr<Burner_simple>(new Burner_simple(this, &outer, std::move(basecase)));
+    vec<Burner*> burners = {};
+    uint64_t thread_count = wrapper_threads.thread_count;
+        for (uint64_t i = 0; i < thread_count; i++) {
+        if (!task->scan_config || task->scan_config->scan_block_size == task->table_size) {
+            std::cout << "Chose basecase: table" << std::endl;
+            basecase = std::unique_ptr<Basecase_table>(new Basecase_table(this));
+        } else if (task->collatz.m == (1 << n_flog(task->collatz.m, 2))) {
+            std::cout << "Chose basecase: m2exp" << std::endl;
+            basecase = std::unique_ptr<Basecase_m2exp>(new Basecase_m2exp(this));
+        } else {
+            std::cout << "Chose basecase: simple" << std::endl;
+            basecase = std::unique_ptr<Basecase_simple>(new Basecase_simple(this));
+        }
+        Burner* burner;
+        if ((1<<n_flog(task->collatz.m, 2)) == task->collatz.m) {
+            std::cout << "Chose chain: m2exp" << std::endl;
+            burner = new Burner_m2exp(this, outer, std::move(basecase));
+        } else {
+            std::cout << "Chose chain: simple" << std::endl;
+            burner = new Burner_simple(this, outer, std::move(basecase));
+        }
+        burners.push_back(burner);
     }
 
     flint_set_num_threads(task->flint_threads);
     uint64_t destination = this->task->max_iterations;
-    outer.run_until(destination);
+    wrapper_mpi.run_until(destination);
 
     std::cout << "Finished: rank " << task->world_rank << std::endl;
     metrics->stop_timer(active_time);
     metrics->dump_as_rank(task->world_rank);
+
+    for (Burner* burner : burners) {
+        delete burner;
+    }
+
     MPI_Finalize();
 
     // TODO: summarize (if -v) or output results/statistics

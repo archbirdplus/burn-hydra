@@ -18,6 +18,7 @@ locked_fmpz::locked_fmpz(locked_fmpz&& rhs) noexcept {
     rhs.mutex.lock();
     std::swap(value, rhs.value);
     rhs.mutex.unlock();
+    mutex.unlock();
 }
 
 locked_fmpz& locked_fmpz::operator =(locked_fmpz&& other) noexcept {
