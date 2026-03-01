@@ -9,6 +9,28 @@ locked_fmpz::locked_fmpz() {
     value.iterations = 0;
 }
 
+locked_fmpz::~locked_fmpz() {
+    value.clear();
+}
+
+locked_fmpz::locked_fmpz(locked_fmpz&& rhs) noexcept {
+    mutex.lock();
+    rhs.mutex.lock();
+    std::swap(value, rhs.value);
+    rhs.mutex.unlock();
+}
+
+locked_fmpz& locked_fmpz::operator =(locked_fmpz&& other) noexcept {
+    if (this != &other) {
+        this->mutex.lock();
+        other.mutex.lock();
+        std::swap(value, other.value);
+        other.mutex.unlock();
+        this->mutex.unlock();
+    }
+    return *this;
+}
+
 timed_fmpz* locked_fmpz::lock_unknown() {
     mutex.lock();
     return &value;
