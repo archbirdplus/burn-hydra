@@ -4,7 +4,7 @@
 
 #include "kernels.h"
 
-Burner_m2exp::Burner_m2exp(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) : Burner_singlethreaded(global_ctx, std::move(upper_ctx), std::move(basecase_ctx)) {
+Burner_m2exp::Burner_m2exp(Context* global_ctx, Wrapper* upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) : Burner_simple(global_ctx, upper_ctx, std::move(basecase_ctx)) {
     mlog = n_flog(global_ctx->task->collatz.m, 2);
     if (global_ctx->task->collatz.m != (1<<mlog)) {
         throw std::runtime_error("Failed to construct burner m2exp context because m was not a power of 2");
@@ -37,7 +37,7 @@ void Burner_m2exp::pushL(int64_t n) {
         basecase_context->pushL(&overcarry[0]);
         return;
     }
-    if (n == ((int64_t)length)-1 && !upper_context->can_push_left) return;
+    if (n == ((int64_t)length)-1 && !subscription.can_push_left) return;
 
     uint64_t scale = scale_self[n];
     uint64_t p2 = mlog*((uint64_t)1<<scale);

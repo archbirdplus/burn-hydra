@@ -3,13 +3,14 @@
 #include <iomanip>
 #include <cassert>
 
-Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_ptr<Burner_MPI> upper_ctx, std::unique_ptr<Basecase_simple> basecase_ctx) {
+Burner_simple::Burner_simple(Context* global_ctx, Wrapper* wrapper, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
-    upper_context = std::move(upper_ctx);
     basecase_context = std::move(basecase_ctx);
-    scale_self = upper_context->local_scales;
+    upper_context = wrapper;
+    subscription = wrapper->add_subscriber(this);
+    scale_self = subscription.scales;
     this->length = scale_self.size();
-    scale_next = {upper_context->local_next_scale};
+    scale_next = {subscription.next_scale};
     scale_next.insert(scale_next.end(), scale_self.begin(), scale_self.end());
     scale_delta = {};
     for (uint64_t i = 0; i < length; i++)
@@ -26,11 +27,11 @@ Burner_singlethreaded::Burner_singlethreaded(Context* global_ctx, std::unique_pt
     }
 }
 
-Burner_singlethreaded::~Burner_singlethreaded() {
+Burner_simple::~Burner_simple() {
     
 }
 
-void Burner_singlethreaded::tick(int64_t n) {
+void Burner_simple::tick(int64_t n) {
     if (n == -1) {
         basecase_context->tick();
         return;
@@ -45,18 +46,18 @@ void Burner_singlethreaded::tick(int64_t n) {
     // set undercarry[n]
 }
 
-void Burner_singlethreaded::pushR(int64_t n) {
+void Burner_simple::pushR(int64_t n) {
     // assume tick previously happened, setting undercarry[n]
     if (n == 0) {
-        if (upper_context->can_push_right)
+        if (subscription.can_push_right)
             upper_context->pushR(&undercarry[0]);
         else {}
     }
 }
 
-void Burner_singlethreaded::pullR(int64_t n) {
+void Burner_simple::pullR(int64_t n) {
     if (n == 0) {
-        if (upper_context->can_push_right)
+        if (subscription.can_push_right)
             upper_context->pullR(&overcarry[0]);
         else {}
     }
@@ -68,7 +69,7 @@ void Burner_singlethreaded::pullR(int64_t n) {
 // Exchanges between nodes n <--> n-1
 // At n=0, 0 <--> -1 indicates syncing right with the outer burner.
 // At n=length, length <--> length-1 indicates syncing left with the outer burner.
-void Burner_singlethreaded::exchange(int64_t n) {
+void Burner_simple::exchange(int64_t n) {
     // By convention, pull to the left direction before pushing to the right direction.
     // This needs to be synchronized.
     // These calls automatically handle calling to upper context.
@@ -79,12 +80,12 @@ void Burner_singlethreaded::exchange(int64_t n) {
     pullL(n-1);
 }
 
-void Burner_singlethreaded::pushL(int64_t n) {
+void Burner_simple::pushL(int64_t n) {
     if (n == -1) {
         basecase_context->pushL(&overcarry[0]);
         return;
     }
-    if ((uint64_t) n == length-1 && !upper_context->can_push_left) return;
+    if ((uint64_t) n == length-1 && !subscription.can_push_left) return;
 
     Workspace* ws = global_context->workspace.get();
 
@@ -96,13 +97,13 @@ void Burner_singlethreaded::pushL(int64_t n) {
     }
 }
 
-void Burner_singlethreaded::pullL(int64_t n) {
+void Burner_simple::pullL(int64_t n) {
     if (n == -1) {
         basecase_context->pullL(&undercarry[0]);
         return;
     }
     if ((uint64_t) n == length-1) {
-        if (!upper_context->can_push_left) return;
+        if (!subscription.can_push_left) return;
         upper_context->pullL(&undercarry[length]);
     }
     // assume it was otherwise inserted into undercarry[n+1]
@@ -110,7 +111,7 @@ void Burner_singlethreaded::pullL(int64_t n) {
     fmpz_add(&storage[n].value, &storage[n].value,&undercarry[n+1].value);
 }
 
-void Burner_singlethreaded::recurse(int64_t n) {
+void Burner_simple::recurse(int64_t n) {
     if (n < 0) {
         tick(n);
         return;
@@ -123,10 +124,17 @@ void Burner_singlethreaded::recurse(int64_t n) {
     }
 }
 
-uint64_t Burner_singlethreaded::step() {
+uint64_t Burner_simple::step() {
     exchange(length);
     recurse(length-1);
     return 1 << scale_self[length-1];
+}
+
+void Burner_simple::run_until(uint64_t end) {
+    uint64_t start = 0;
+    while (start < end) {
+        start += step();
+    }
 }
 
 

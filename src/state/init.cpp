@@ -107,7 +107,7 @@ void Context::run() {
     // runner<kernel_ramp_consistent_m2exp, kernel_basecase_consistent_m2exp>(this).run();
     // runner<kernel_ramp_consistent, kernel_basecase_consistent>(this).run();
     std::cout << "Chose communicator: MPI" << std::endl;
-    auto outer = std::unique_ptr<Burner_MPI>(new Burner_MPI(this));
+    auto outer = Wrapper_MPI(this);
     std::unique_ptr<Basecase_simple> basecase;
     if (!task->scan_config || task->scan_config->scan_block_size == task->table_size) {
         std::cout << "Chose basecase: table" << std::endl;
@@ -122,24 +122,15 @@ void Context::run() {
     std::unique_ptr<Burner> burner;
     if ((1<<n_flog(task->collatz.m, 2)) == task->collatz.m) {
         std::cout << "Chose chain: m2exp" << std::endl;
-        burner = std::unique_ptr<Burner_m2exp>(new Burner_m2exp(this, std::move(outer), std::move(basecase)));
+        burner = std::unique_ptr<Burner_m2exp>(new Burner_m2exp(this, &outer, std::move(basecase)));
     } else {
         std::cout << "Chose chain: simple" << std::endl;
-        burner = std::unique_ptr<Burner_singlethreaded>(new Burner_singlethreaded(this, std::move(outer), std::move(basecase)));
+        burner = std::unique_ptr<Burner_simple>(new Burner_simple(this, &outer, std::move(basecase)));
     }
-    // std::cout << "Chose chain: OpenMP" << std::endl;
-    // auto burner = std::unique_ptr<Burner_openmp>(new Burner_openmp(this, std::move(outer), std::move(basecase)));
 
     flint_set_num_threads(task->flint_threads);
     uint64_t destination = this->task->max_iterations;
-    uint64_t iteration = 0;
-    while (iteration < destination) {
-        uint64_t taken = burner->step();
-        if (iteration + taken > destination) {
-             throw std::runtime_error("Internal error: took too many steps");
-        }
-        iteration += taken;
-    }
+    outer.run_until(destination);
 
     std::cout << "Finished: rank " << task->world_rank << std::endl;
     metrics->stop_timer(active_time);

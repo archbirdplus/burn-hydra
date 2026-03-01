@@ -3,8 +3,9 @@
 #include <iostream>
 #include <cassert>
 
-Burner_MPI::Burner_MPI(Context* global_ctx) {
+Wrapper_MPI::Wrapper_MPI(Context* global_ctx) {
     global_context = global_ctx;
+    local_burner = nullptr;
     world_size = global_ctx->task->world_size;
     world_rank = global_ctx->task->world_rank;
     can_push_left = world_rank != world_size - 1;
@@ -18,26 +19,44 @@ Burner_MPI::Burner_MPI(Context* global_ctx) {
         local_scales.front(); // TODO: this depends on the power of the basecase
 }
 
-Burner_MPI::~Burner_MPI() {
+Wrapper_MPI::~Wrapper_MPI() {
     
 }
 
-void Burner_MPI::pullR(timed_fmpz* x_import) {
+subscription_t Wrapper_MPI::add_subscriber(Runnable* burner) {
+    if (local_burner != nullptr) {
+        throw std::runtime_error("Added more than one burner to an MPI wrapper");
+    }
+    local_burner = burner;
+    return {
+        .scales = local_scales,
+        .next_scale = local_next_scale,
+        .can_push_right = can_push_right,
+        .can_push_left = can_push_left,
+        .id = 0
+    };
+}
+
+void Wrapper_MPI::run_until(uint64_t end) {
+    local_burner->run_until(end);
+}
+
+void Wrapper_MPI::pullR(timed_fmpz* x_import) {
     assert(can_push_right);
     receiveRight(global_context, x_import);
 }
 
-void Burner_MPI::pushR(timed_fmpz* x_export) {
+void Wrapper_MPI::pushR(timed_fmpz* x_export) {
     assert(can_push_right);
     sendRight(global_context, x_export);
 }
 
-void Burner_MPI::pushL(timed_fmpz* x_export) {
+void Wrapper_MPI::pushL(timed_fmpz* x_export) {
     assert(can_push_left);
     sendLeft(global_context, x_export);
 }
 
-void Burner_MPI::pullL(timed_fmpz* x_import) {
+void Wrapper_MPI::pullL(timed_fmpz* x_import) {
     assert(can_push_left);
     receiveLeft(global_context, x_import);
 }

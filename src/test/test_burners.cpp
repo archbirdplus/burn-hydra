@@ -127,15 +127,15 @@ class BurnerTypesTest: public BurnerTest {
 TYPED_TEST_SUITE_P(BurnerTypesTest);
 
 using BurnerTypes = ::testing::Types<
-    std::tuple<Burner_singlethreaded, Basecase_simple>,
-    std::tuple<Burner_singlethreaded, Basecase_m2exp>,
-    std::tuple<Burner_singlethreaded, Basecase_table>,
+    std::tuple<Burner_simple, Basecase_simple>,
+    std::tuple<Burner_simple, Basecase_m2exp>,
+    std::tuple<Burner_simple, Basecase_table>,
     std::tuple<Burner_m2exp, Basecase_simple>,
     std::tuple<Burner_m2exp, Basecase_m2exp>,
     std::tuple<Burner_m2exp, Basecase_table>
 >;
 // Unfortunately, it seems we can't have such a loop:
-// ::testing::Combine(::testing::Types<Burner_singlethreaded, Burner_m2exp>, ::testing::Types<Basecase_simple, Basecase_m2exp, Basecase_table>);
+// ::testing::Combine(::testing::Types<Burner_simple, Burner_m2exp>, ::testing::Types<Basecase_simple, Basecase_m2exp, Basecase_table>);
 
 TYPED_TEST_P(BurnerTypesTest, CheckFinalValue) {
     uint64_t iteration_count = 192;
@@ -152,13 +152,15 @@ TYPED_TEST_P(BurnerTypesTest, CheckFinalValue) {
     // threaded should be an on-top layer
     using BurnerType = typename std::tuple_element<0, TypeParam>::type;
     using BaseType = typename std::tuple_element<1, TypeParam>::type;
+    auto wrapper = Wrapper_MPI(&context);
     auto burner = BurnerType(
         &context,
-        std::unique_ptr<Burner_MPI>(new Burner_MPI(&context)),
+        &wrapper,
         std::unique_ptr<Basecase_simple>(new BaseType(&context))
     );
     uint64_t iterations = 0;
     uint64_t steps = 0;
+    // Manually driving burner for step count logs.
     while(iterations < iteration_count) {
         std::cout << "step " << steps << std::endl;
         iterations += burner.step();
