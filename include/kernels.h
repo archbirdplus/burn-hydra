@@ -64,10 +64,10 @@ public:
     virtual ~Wrapper() {};
     virtual subscription_t add_subscriber(Runnable* burner) = 0;
 
-    virtual void pushR(timed_fmpz* x_export) = 0;
-    virtual void pullR(timed_fmpz* x_export) = 0;
-    virtual void pushL(timed_fmpz* x_export) = 0;
-    virtual void pullL(timed_fmpz* x_export) = 0;
+    virtual void pushR(uint64_t id, timed_fmpz* x_export) = 0;
+    virtual void pullR(uint64_t id, timed_fmpz* x_export) = 0;
+    virtual void pushL(uint64_t id, timed_fmpz* x_export) = 0;
+    virtual void pullL(uint64_t id, timed_fmpz* x_export) = 0;
 };
 
 class Burner_simple: public Burner, public Runnable {
@@ -130,6 +130,7 @@ typedef struct thread_break {
 typedef struct thread_section {
     uint64_t high;
     uint64_t low;
+    uint64_t id;
 } thread_section_t;
 
 class Wrapper_threads: public Wrapper, public Runnable {
@@ -151,12 +152,13 @@ public:
 
     subscription_t add_subscriber(Runnable* thread);
 
-    void pushR(timed_fmpz* x_export);
-    void pullR(timed_fmpz* x_import);
+    void pushR(uint64_t id, timed_fmpz* x_export);
+    void pullR(uint64_t id, timed_fmpz* x_import);
 
-    void pushL(timed_fmpz* x_export);
-    void pullL(timed_fmpz* x_import);
+    void pushL(uint64_t id, timed_fmpz* x_export);
+    void pullL(uint64_t id, timed_fmpz* x_import);
 
+    void run_thread(thread_section_t section, uint64_t end);
     void run_until(uint64_t steps);
 };
 
@@ -180,13 +182,12 @@ public:
 
     subscription_t add_subscriber(Runnable* local);
 
-    void pushR(timed_fmpz* x_export);
-    void pullR(timed_fmpz* x_import);
+    void pushR(uint64_t id, timed_fmpz* x_export);
+    void pullR(uint64_t id, timed_fmpz* x_import);
 
-    void pushL(timed_fmpz* x_export);
-    void pullL(timed_fmpz* x_import);
+    void pushL(uint64_t id, timed_fmpz* x_export);
+    void pullL(uint64_t id, timed_fmpz* x_import);
 
-    uint64_t step();
     void run_until(uint64_t steps);
 };
 

@@ -41,22 +41,22 @@ void Wrapper_MPI::run_until(uint64_t end) {
     local_burner->run_until(end);
 }
 
-void Wrapper_MPI::pullR(timed_fmpz* x_import) {
+void Wrapper_MPI::pullR(uint64_t _, timed_fmpz* x_import) {
     assert(can_push_right);
     receiveRight(global_context, x_import);
 }
 
-void Wrapper_MPI::pushR(timed_fmpz* x_export) {
+void Wrapper_MPI::pushR(uint64_t _, timed_fmpz* x_export) {
     assert(can_push_right);
     sendRight(global_context, x_export);
 }
 
-void Wrapper_MPI::pushL(timed_fmpz* x_export) {
+void Wrapper_MPI::pushL(uint64_t _, timed_fmpz* x_export) {
     assert(can_push_left);
     sendLeft(global_context, x_export);
 }
 
-void Wrapper_MPI::pullL(timed_fmpz* x_import) {
+void Wrapper_MPI::pullL(uint64_t _, timed_fmpz* x_import) {
     assert(can_push_left);
     receiveLeft(global_context, x_import);
 }

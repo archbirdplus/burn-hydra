@@ -50,7 +50,7 @@ void Burner_simple::pushR(int64_t n) {
     // assume tick previously happened, setting undercarry[n]
     if (n == 0) {
         if (subscription.can_push_right)
-            upper_context->pushR(&undercarry[0]);
+            upper_context->pushR(subscription.id, &undercarry[0]);
         else {}
     }
 }
@@ -58,7 +58,7 @@ void Burner_simple::pushR(int64_t n) {
 void Burner_simple::pullR(int64_t n) {
     if (n == 0) {
         if (subscription.can_push_right)
-            upper_context->pullR(&overcarry[0]);
+            upper_context->pullR(subscription.id, &overcarry[0]);
         else {}
     }
     // assume corresponding pushL previously happened, setting overcarry[n]
@@ -93,7 +93,7 @@ void Burner_simple::pushL(int64_t n) {
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
     if ((uint64_t) n == length-1) {
-        upper_context->pushL(&overcarry[length]);
+        upper_context->pushL(subscription.id, &overcarry[length]);
     }
 }
 
@@ -104,7 +104,7 @@ void Burner_simple::pullL(int64_t n) {
     }
     if ((uint64_t) n == length-1) {
         if (!subscription.can_push_left) return;
-        upper_context->pullL(&undercarry[length]);
+        upper_context->pullL(subscription.id, &undercarry[length]);
     }
     // assume it was otherwise inserted into undercarry[n+1]
     ASSERT_SYNCED(storage[n], undercarry[n+1]);
