@@ -13,6 +13,10 @@ typedef struct locked_fmpz {
     mutex_t mutex;
 
     locked_fmpz();
+    ~locked_fmpz();
+    locked_fmpz(locked_fmpz&&) noexcept;
+    locked_fmpz& operator =(locked_fmpz&&) noexcept;
+
     void clear();
 
     timed_fmpz* lock_unknown();

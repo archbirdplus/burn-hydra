@@ -23,6 +23,7 @@ public:
     opt<int64_t> checkpoint_interval;
     uint64_t table_size;
 
+    vecvec<uint64_t> thread_breaks;
     vecvec<uint64_t> block_sizes;
     uint64_t block_size_max;
 

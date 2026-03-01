@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 
 #include "state.h"
 #include "locked_fmpz.h"
@@ -114,6 +115,51 @@ public:
 
     uint64_t step() override;
 };
+
+typedef struct thread_break {
+    uint64_t right_high;
+    locked_fmpz undercarry;
+    locked_fmpz overcarry;
+    std::condition_variable hold_right;
+    std::condition_variable hold_left;
+
+    thread_break(uint64_t index);
+    thread_break(thread_break&& other);
+} thread_break_t;
+
+typedef struct thread_section {
+    uint64_t high;
+    uint64_t low;
+} thread_section_t;
+
+class Wrapper_threads: public Wrapper, public Runnable {
+public:
+    Context* global_context;
+    Wrapper* upper_context;
+    subscription_t subscription;
+
+    vec<Runnable*> thread_burners;
+    vec<thread_section_t> thread_sections;
+    vec<thread_break_t> thread_breaks;
+    vec<std::thread> threads;
+
+    vec<uint32_t> thread_scales;
+    uint32_t next_scale;
+
+    Wrapper_threads(Context* global_ctx, Wrapper* wrapper);
+    ~Wrapper_threads();
+
+    subscription_t add_subscriber(Runnable* thread);
+
+    void pushR(timed_fmpz* x_export);
+    void pullR(timed_fmpz* x_import);
+
+    void pushL(timed_fmpz* x_export);
+    void pullL(timed_fmpz* x_import);
+
+    void run_until(uint64_t steps);
+};
+
 
 class Wrapper_MPI: public Wrapper {
 public:
