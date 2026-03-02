@@ -11,7 +11,7 @@ Basecase_simple::Basecase_simple(Context* ctx) {
 }
 
 Basecase_simple::~Basecase_simple() {
-    storage.clear();
+    
 }
 
 void Basecase_simple::pushL(timed_fmpz* x_export) {
