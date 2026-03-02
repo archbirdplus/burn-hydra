@@ -119,7 +119,7 @@ TEST_F(BurnerTest, CountParitiesFancy) {
     EXPECT_EQ(counts.odd, 525068);
 }
 
-TEST_F(BurnerTest, ThreadedResult) {
+TEST_F(BurnerTest, OneThreadResult) {
     uint64_t iteration_count = 192;
     auto builder = CollatzBuilder()
             .set_flint_threads(1)
@@ -129,7 +129,47 @@ TEST_F(BurnerTest, ThreadedResult) {
             .do_prune(true)
             .set_initial(3);
     Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
-    context.task->thread_breaks = {{}};
+    auto mpi_wrapper = Wrapper_MPI(&context);
+    auto threads_wrapper = Wrapper_threads(&context, &mpi_wrapper);
+    vec<Burner_simple*> burners = {};
+    auto burner = Burner_simple(
+        &context,
+        &threads_wrapper,
+        std::unique_ptr<Basecase_simple>(new Basecase_simple(&context))
+    );
+    mpi_wrapper.run_until(iteration_count);
+
+    fmpz_t tmp; fmpz_init(tmp);
+    timed_fmpz result = timed_fmpz();
+    fmpz_one_2exp(tmp, 0);
+    fmpz_addmul(&result.value, &burner.basecase_context->storage.value, tmp);
+    fmpz_addmul(&result.value, &burner.undercarry[0].value, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*1);
+    fmpz_addmul(&result.value, &burner.storage[0].value, tmp);
+    fmpz_addmul(&result.value, &burner.undercarry[1].value, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*2);
+    fmpz_addmul(&result.value, &burner.storage[1].value, tmp);
+    fmpz_addmul(&result.value, &burner.undercarry[2].value, tmp);
+    fmpz_one_2exp(tmp, (1<<4)*2+(1<<5));
+    fmpz_addmul(&result.value, &burner.storage[2].value, tmp);
+
+    timed_fmpz answer = timed_fmpz();
+    fmpz_set_uiui(&answer.value, 850778579484107, 1983176903683680569);
+    expect_timed_eq(answer, result);
+}
+
+
+TEST_F(BurnerTest, ThreeThreadedResult) {
+    uint64_t iteration_count = 192;
+    auto builder = CollatzBuilder()
+            .set_flint_threads(1)
+            .consistent_collatz(3, 2, {0, 1})
+            .set_iterations(iteration_count)
+            .set_table_size(2)
+            .do_prune(true)
+            .set_initial(3);
+    Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
+    context.task->thread_breaks = {{0, 1}};
     auto mpi_wrapper = Wrapper_MPI(&context);
     auto threads_wrapper = Wrapper_threads(&context, &mpi_wrapper);
     vec<Burner_simple*> burners = {};

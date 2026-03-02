@@ -82,7 +82,8 @@ void Burner_simple::exchange(int64_t n) {
 
 void Burner_simple::pushL(int64_t n) {
     if (n == -1) {
-        basecase_context->pushL(&overcarry[0]);
+        if (!subscription.can_push_right)
+            basecase_context->pushL(&overcarry[0]);
         return;
     }
     if ((uint64_t) n == length-1 && !subscription.can_push_left) return;
@@ -99,7 +100,8 @@ void Burner_simple::pushL(int64_t n) {
 
 void Burner_simple::pullL(int64_t n) {
     if (n == -1) {
-        basecase_context->pullL(&undercarry[0]);
+        if (!subscription.can_push_right)
+            basecase_context->pullL(&undercarry[0]);
         return;
     }
     if ((uint64_t) n == length-1) {
@@ -118,8 +120,8 @@ void Burner_simple::recurse(int64_t n) {
     };
     uint64_t pow = 1 << scale_delta[n];
     for (uint32_t i = 0; i < pow; i++) {
-        exchange(n); // exchange can have multiple orders inside itself
-        tick(n); // tick and recurse can happen in parallel
+        exchange(n);
+        tick(n);
         recurse(n-1);
     }
 }

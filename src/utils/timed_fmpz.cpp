@@ -19,6 +19,7 @@ timed_fmpz::~timed_fmpz() {
 
 timed_fmpz::timed_fmpz(timed_fmpz&& other) noexcept {
     fmpz_init_set_ui(&value, 0);
+    fmpz_swap(&value, &other.value);
     iterations = other.iterations;
     other.iterations = -1;
 }

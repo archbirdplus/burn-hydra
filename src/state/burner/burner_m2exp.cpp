@@ -33,7 +33,7 @@ void Burner_m2exp::tick(int64_t n) {
 }
 
 void Burner_m2exp::pushL(int64_t n) {
-    if (n == -1) {
+    if (n == -1 && !subscription.can_push_right) {
         basecase_context->pushL(&overcarry[0]);
         return;
     }
