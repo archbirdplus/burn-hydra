@@ -17,7 +17,8 @@ Burner_m2exp::~Burner_m2exp() {
 
 void Burner_m2exp::tick(int64_t n) {
     if (n == -1) {
-        basecase_context->tick();
+        if (!subscription.can_push_right)
+            basecase_context->tick();
         return;
     }
     Workspace* ws = global_context->workspace.get();
@@ -33,8 +34,9 @@ void Burner_m2exp::tick(int64_t n) {
 }
 
 void Burner_m2exp::pushL(int64_t n) {
-    if (n == -1 && !subscription.can_push_right) {
-        basecase_context->pushL(&overcarry[0]);
+    if (n == -1) {
+        if (!subscription.can_push_right)
+            basecase_context->pushL(&overcarry[0]);
         return;
     }
     if (n == ((int64_t)length)-1 && !subscription.can_push_left) return;

@@ -29,7 +29,8 @@ timed_fmpz& timed_fmpz::operator =(timed_fmpz&& other) noexcept {
         this->clear();
         fmpz_init(&this->value);
         fmpz_swap(&this->value, &other.value);
-        std::swap(this->iterations, other.iterations);
+        this->iterations = other.iterations;
+        other.iterations = -1;
         other.clear();
     }
     return *this;

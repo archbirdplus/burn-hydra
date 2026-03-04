@@ -33,7 +33,8 @@ Burner_simple::~Burner_simple() {
 
 void Burner_simple::tick(int64_t n) {
     if (n == -1) {
-        basecase_context->tick();
+        if (!subscription.can_push_right)
+            basecase_context->tick();
         return;
     }
     Workspace* ws = global_context->workspace.get();

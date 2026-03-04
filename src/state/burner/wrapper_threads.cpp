@@ -67,7 +67,7 @@ subscription_t Wrapper_threads::add_subscriber(Runnable* burner) {
     auto section = thread_sections[index];
     return {
         .scales = std::vector(thread_scales.begin()+section.low, thread_scales.begin()+section.high+1),
-        .next_scale = section.low > 0 ? thread_scales[section.low] : next_scale,
+        .next_scale = section.low > 0 ? thread_scales[section.low-1] : next_scale,
         .can_push_right = index > 0 ? true : subscription.can_push_right,
         .can_push_left = index >= max_burners-1 ? subscription.can_push_left : true,
         .id = index
@@ -75,7 +75,6 @@ subscription_t Wrapper_threads::add_subscriber(Runnable* burner) {
 }
 
 void Wrapper_threads::run_thread(thread_section_t section, uint64_t end) {
-    std::cout << "section " << section.id << " of burners " << thread_burners.size() << std::endl;
     thread_burners[section.id]->run_until(end);
 }
 

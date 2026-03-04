@@ -37,7 +37,7 @@ int main() {
         .scan_fn(count_fn, 16, false)
         .scan_context(&ctx);
     Context c = s.init();
-    // c.task->thread_breaks = {{0, 3, 6}};
+    c.task->thread_breaks = {{0, 3, 6}};
     c.run();
 
     std::cout << "Count after " << iterations << " iterations --" << std::endl;
