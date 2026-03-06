@@ -115,8 +115,9 @@ void Burner_simple::pushL(int64_t n) {
 
 void Burner_simple::pullL(int64_t n) {
     if (n == -1) {
-        if (subscription.can_push_right) return;
-        basecase_context->pullL(&undercarry[0]);
+        if (!subscription.can_push_right)
+            basecase_context->pullL(&undercarry[0]);
+        return;
     }
     if ((uint64_t) n == length-1) {
         if (!subscription.can_push_left) return;
