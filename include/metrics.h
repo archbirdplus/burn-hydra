@@ -66,6 +66,7 @@ public:
 
     void count(counter_class);
 
-    void dump_with_prefix(std::string prefix);
+    void dump_with_prefix(std::string prefix, start_time_t first_start);
+    start_time_t first_start();
 };
 

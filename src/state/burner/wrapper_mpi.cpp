@@ -38,10 +38,10 @@ subscription_t Wrapper_MPI::add_subscriber(Runnable* burner) {
     };
 }
 
-void Wrapper_MPI::logs_with_prefix(std::string prefix) {
+void Wrapper_MPI::logs_with_prefix(std::string prefix, start_time_t first_start) {
     std::string own_prefix = prefix + "_" + std::to_string(world_rank);
-    metrics->dump_with_prefix(own_prefix);
-    local_burner->logs_with_prefix(own_prefix);
+    metrics->dump_with_prefix(own_prefix, first_start);
+    local_burner->logs_with_prefix(own_prefix, first_start);
 }
 
 void Wrapper_MPI::run_until(uint64_t end) {

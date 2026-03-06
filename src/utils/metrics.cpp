@@ -106,7 +106,15 @@ void Metrics::count(counter_class t) {
     counters.counter[t] += 1;
 }
 
-void Metrics::dump_with_prefix(std::string prefix) {
+start_time_t Metrics::first_start() {
+    if (timers.intervals[active_time]->size() == 0) {
+        throw std::runtime_error("Internal error: did not begin active timer");
+    }
+    const start_time_t first_start = (*timers.intervals[active_time])[0].start;
+    return first_start;
+}
+
+void Metrics::dump_with_prefix(std::string prefix, start_time_t first_start) {
     std::string filename {"rank"};
     filename.append(prefix);
     filename.append(".json");
@@ -129,10 +137,6 @@ void Metrics::dump_with_prefix(std::string prefix) {
         return;
     }
     std::cout << "Dumping json timer intervals." << std::endl;
-    if (timers.intervals[active_time]->size() == 0) {
-        throw std::runtime_error("Internal error: did not begin active timer");
-    }
-    const start_time_t first_start = (*timers.intervals[active_time])[0].start;
     f << "\"rank " << prefix << "\": {";
     for (int t = 0; t < _timer_classes; t++) {
         if (std::optional<std::vector<start_stop_t>> intervals = timers.intervals[t]) {

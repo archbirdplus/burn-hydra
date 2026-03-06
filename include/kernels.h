@@ -52,7 +52,7 @@ class Runnable {
 public:
     virtual ~Runnable() {};
     virtual void run_until(uint64_t end) = 0;
-    virtual void logs_with_prefix(std::string prefix) = 0;
+    virtual void logs_with_prefix(std::string prefix, start_time_t first_start) = 0;
 };
 
 class Burner {
@@ -105,7 +105,7 @@ public:
     virtual uint64_t step();
     virtual void run_until(uint64_t end);
 
-    virtual void logs_with_prefix(std::string prefix);
+    virtual void logs_with_prefix(std::string prefix, start_time_t first_start);
 };
 
 class Burner_m2exp: public Burner_simple {
@@ -172,7 +172,7 @@ public:
     void run_thread(thread_section_t section, uint64_t end);
     void run_until(uint64_t steps);
 
-    void logs_with_prefix(std::string prefix);
+    void logs_with_prefix(std::string prefix, start_time_t first_start);
 };
 
 
@@ -204,6 +204,6 @@ public:
 
     void run_until(uint64_t steps);
 
-    void logs_with_prefix(std::string prefix);
+    void logs_with_prefix(std::string prefix, start_time_t first_start);
 };
 

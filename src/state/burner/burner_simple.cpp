@@ -32,8 +32,8 @@ Burner_simple::~Burner_simple() {
     
 }
 
-void Burner_simple::logs_with_prefix(std::string prefix) {
-    metrics->dump_with_prefix(prefix + "_" + std::to_string(subscription.id));
+void Burner_simple::logs_with_prefix(std::string prefix, start_time_t first_start) {
+    metrics->dump_with_prefix(prefix + "_" + std::to_string(subscription.id), first_start);
 }
 
 void Burner_simple::tick(int64_t n) {

@@ -75,11 +75,11 @@ subscription_t Wrapper_threads::add_subscriber(Runnable* burner) {
     };
 }
 
-void Wrapper_threads::logs_with_prefix(std::string prefix) {
+void Wrapper_threads::logs_with_prefix(std::string prefix, start_time_t first_start) {
     std::string own_prefix = prefix + "_" + std::to_string(subscription.id);
-    metrics->dump_with_prefix(own_prefix);
+    metrics->dump_with_prefix(own_prefix, first_start);
     for (Runnable* burner : thread_burners) {
-        burner->logs_with_prefix(own_prefix);
+        burner->logs_with_prefix(own_prefix, first_start);
     }
 }
 
