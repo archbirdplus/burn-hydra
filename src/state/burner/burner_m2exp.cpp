@@ -48,13 +48,17 @@ void Burner_m2exp::pushL(int64_t n) {
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
     if (n == ((int64_t)length)-1) {
+        metrics->start_timer(waiting_send_right);
         upper_context->pushL(subscription.id, &overcarry[length]);
+        metrics->stop_timer(waiting_send_right);
     }
 }
 
 uint64_t Burner_m2exp::step() {
     exchange(length);
+    metrics->start_timer(grinding_chain);
     recurse(length-1);
+    metrics->stop_timer(grinding_chain);
     return 1 << scale_self[length-1];
 }
 

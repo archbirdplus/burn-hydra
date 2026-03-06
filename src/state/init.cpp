@@ -146,7 +146,8 @@ void Context::run() {
 
     std::cout << "Finished: rank " << task->world_rank << std::endl;
     metrics->stop_timer(active_time);
-    metrics->dump_as_rank(task->world_rank);
+    metrics->dump_with_prefix("_" + std::to_string(task->world_rank));
+    wrapper_mpi.logs_with_prefix("_" + std::to_string(task->world_rank));
 
     for (Burner* burner : burners) {
         delete burner;

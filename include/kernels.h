@@ -3,6 +3,7 @@
 #include <memory>
 #include <thread>
 
+#include "metrics.h"
 #include "state.h"
 #include "locked_fmpz.h"
 
@@ -51,6 +52,7 @@ class Runnable {
 public:
     virtual ~Runnable() {};
     virtual void run_until(uint64_t end) = 0;
+    virtual void logs_with_prefix(std::string prefix) = 0;
 };
 
 class Burner {
@@ -74,6 +76,7 @@ class Burner_simple: public Burner, public Runnable {
 public:
     Context* global_context;
     Wrapper* upper_context;
+    std::unique_ptr<Metrics> metrics;
     subscription_t subscription;
     std::unique_ptr<Basecase_simple> basecase_context;
     uint64_t length;
@@ -101,6 +104,8 @@ public:
 
     virtual uint64_t step();
     virtual void run_until(uint64_t end);
+
+    virtual void logs_with_prefix(std::string prefix);
 };
 
 class Burner_m2exp: public Burner_simple {
@@ -142,6 +147,7 @@ class Wrapper_threads: public Wrapper, public Runnable {
 public:
     Context* global_context;
     Wrapper* upper_context;
+    std::unique_ptr<Metrics> metrics;
     subscription_t subscription;
 
     uint64_t thread_count;
@@ -165,6 +171,8 @@ public:
 
     void run_thread(thread_section_t section, uint64_t end);
     void run_until(uint64_t steps);
+
+    void logs_with_prefix(std::string prefix);
 };
 
 
@@ -172,6 +180,7 @@ class Wrapper_MPI: public Wrapper {
 public:
     Context* global_context;
     Runnable* local_burner;
+    std::unique_ptr<Metrics> metrics;
 
     vec<uint32_t> local_scales;
     uint32_t local_next_scale;
@@ -194,5 +203,7 @@ public:
     void pullL(uint64_t id, timed_fmpz* x_import);
 
     void run_until(uint64_t steps);
+
+    void logs_with_prefix(std::string prefix);
 };
 

@@ -67,34 +67,34 @@ void recv_fmpz(Metrics* metrics, int rank, int d, fmpz_t fx) {
     metrics->stop_timer(d > 0 ? waiting_recv_left : waiting_recv_right);
 }
 
-void sendLeft(Context* ctx, fmpz_t x) {
-    send_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, x);
+void sendLeft(Metrics* metrics, int world_rank, fmpz_t x) {
+    send_fmpz(metrics, world_rank+1, +1, x);
 }
-void receiveLeft(Context* ctx, fmpz_t x) {
-    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, x);
+void receiveLeft(Metrics* metrics, int world_rank, fmpz_t x) {
+    recv_fmpz(metrics, world_rank+1, +1, x);
 }
-void sendRight(Context* ctx, fmpz_t x) {
-    send_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, x);
+void sendRight(Metrics* metrics, int world_rank, fmpz_t x) {
+    send_fmpz(metrics, world_rank-1, -1, x);
 }
-void receiveRight(Context* ctx, fmpz_t x) {
-    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, x);
+void receiveRight(Metrics* metrics, int world_rank, fmpz_t x) {
+    recv_fmpz(metrics, world_rank-1, -1, x);
 }
 
-void sendLeft(Context* ctx, timed_fmpz* x) {
-    send_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->value);
-    send_i64(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->iterations);
+void sendLeft(Metrics* metrics, int world_rank, timed_fmpz* x) {
+    send_fmpz(metrics, world_rank+1, +1, &x->value);
+    send_i64(metrics, world_rank+1, +1, &x->iterations);
 }
-void receiveLeft(Context* ctx, timed_fmpz* x) {
-    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->value);
-    recv_i64(ctx->metrics.get(), ctx->task->world_rank+1, +1, &x->iterations);
+void receiveLeft(Metrics* metrics, int world_rank, timed_fmpz* x) {
+    recv_fmpz(metrics, world_rank+1, +1, &x->value);
+    recv_i64(metrics, world_rank+1, +1, &x->iterations);
 }
-void sendRight(Context* ctx, timed_fmpz* x) {
-    send_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->value);
-    send_i64(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->iterations);
+void sendRight(Metrics* metrics, int world_rank, timed_fmpz* x) {
+    send_fmpz(metrics, world_rank-1, -1, &x->value);
+    send_i64(metrics, world_rank-1, -1, &x->iterations);
 }
-void receiveRight(Context* ctx, timed_fmpz* x) {
-    recv_fmpz(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->value);
-    recv_i64(ctx->metrics.get(), ctx->task->world_rank-1, -1, &x->iterations);
+void receiveRight(Metrics* metrics, int world_rank, timed_fmpz* x) {
+    recv_fmpz(metrics, world_rank-1, -1, &x->value);
+    recv_i64(metrics, world_rank-1, -1, &x->iterations);
 }
 
 

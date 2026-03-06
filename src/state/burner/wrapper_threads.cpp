@@ -30,6 +30,7 @@ thread_break& thread_break::operator =(thread_break&& other) noexcept {
 Wrapper_threads::Wrapper_threads(Context* global_ctx, Wrapper* wrapper) {
     global_context = global_ctx;
     subscription = wrapper->add_subscriber(this);
+    metrics = std::unique_ptr<Metrics>(new Metrics(true));
 
     thread_scales = subscription.scales;
     next_scale = subscription.next_scale;
@@ -72,6 +73,14 @@ subscription_t Wrapper_threads::add_subscriber(Runnable* burner) {
         .can_push_left = index >= max_burners-1 ? subscription.can_push_left : true,
         .id = index
     };
+}
+
+void Wrapper_threads::logs_with_prefix(std::string prefix) {
+    std::string own_prefix = prefix + "_" + std::to_string(subscription.id);
+    metrics->dump_with_prefix(own_prefix);
+    for (Runnable* burner : thread_burners) {
+        burner->logs_with_prefix(own_prefix);
+    }
 }
 
 void Wrapper_threads::run_thread(thread_section_t section, uint64_t end) {

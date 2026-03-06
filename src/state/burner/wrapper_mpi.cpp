@@ -6,6 +6,7 @@
 Wrapper_MPI::Wrapper_MPI(Context* global_ctx) {
     global_context = global_ctx;
     local_burner = nullptr;
+    metrics = std::unique_ptr<Metrics>(new Metrics(true));
     world_size = global_ctx->task->world_size;
     world_rank = global_ctx->task->world_rank;
     can_push_left = world_rank != world_size - 1;
@@ -37,28 +38,34 @@ subscription_t Wrapper_MPI::add_subscriber(Runnable* burner) {
     };
 }
 
+void Wrapper_MPI::logs_with_prefix(std::string prefix) {
+    std::string own_prefix = prefix + "_" + std::to_string(world_rank);
+    metrics->dump_with_prefix(own_prefix);
+    local_burner->logs_with_prefix(own_prefix);
+}
+
 void Wrapper_MPI::run_until(uint64_t end) {
     local_burner->run_until(end);
 }
 
 void Wrapper_MPI::pullR(uint64_t _, timed_fmpz* x_import) {
     assert(can_push_right);
-    receiveRight(global_context, x_import);
+    receiveRight(metrics.get(), world_rank, x_import);
 }
 
 void Wrapper_MPI::pushR(uint64_t _, timed_fmpz* x_export) {
     assert(can_push_right);
-    sendRight(global_context, x_export);
+    sendRight(metrics.get(), world_rank, x_export);
 }
 
 void Wrapper_MPI::pushL(uint64_t _, timed_fmpz* x_export) {
     assert(can_push_left);
-    sendLeft(global_context, x_export);
+    sendLeft(metrics.get(), world_rank, x_export);
 }
 
 void Wrapper_MPI::pullL(uint64_t _, timed_fmpz* x_import) {
     assert(can_push_left);
-    receiveLeft(global_context, x_import);
+    receiveLeft(metrics.get(), world_rank, x_import);
 }
 
 

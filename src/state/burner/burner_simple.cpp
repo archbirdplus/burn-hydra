@@ -5,6 +5,7 @@
 
 Burner_simple::Burner_simple(Context* global_ctx, Wrapper* wrapper, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
+    metrics = std::unique_ptr<Metrics>(new Metrics(true));
     basecase_context = std::move(basecase_ctx);
     upper_context = wrapper;
     subscription = wrapper->add_subscriber(this);
@@ -31,10 +32,17 @@ Burner_simple::~Burner_simple() {
     
 }
 
+void Burner_simple::logs_with_prefix(std::string prefix) {
+    metrics->dump_with_prefix(prefix + "_" + std::to_string(subscription.id));
+}
+
 void Burner_simple::tick(int64_t n) {
     if (n == -1) {
-        if (!subscription.can_push_right)
+        if (!subscription.can_push_right) {
+            metrics->start_timer(grinding_basecase);
             basecase_context->tick();
+            metrics->stop_timer(grinding_basecase);
+        }
         return;
     }
     Workspace* ws = global_context->workspace.get();
@@ -50,17 +58,21 @@ void Burner_simple::tick(int64_t n) {
 void Burner_simple::pushR(int64_t n) {
     // assume tick previously happened, setting undercarry[n]
     if (n == 0) {
-        if (subscription.can_push_right)
+        if (subscription.can_push_right) {
+            metrics->start_timer(waiting_send_right);
             upper_context->pushR(subscription.id, &undercarry[0]);
-        else {}
+            metrics->stop_timer(waiting_send_right);
+        } else {}
     }
 }
 
 void Burner_simple::pullR(int64_t n) {
     if (n == 0) {
-        if (subscription.can_push_right)
+        if (subscription.can_push_right) {
+            metrics->start_timer(waiting_recv_right);
             upper_context->pullR(subscription.id, &overcarry[0]);
-        else {}
+            metrics->stop_timer(waiting_recv_right);
+        } else {}
     }
     // assume corresponding pushL previously happened, setting overcarry[n]
     ASSERT_SYNCED(storage[n], overcarry[n]);
@@ -95,19 +107,22 @@ void Burner_simple::pushL(int64_t n) {
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
     if ((uint64_t) n == length-1) {
+        metrics->start_timer(waiting_send_left);
         upper_context->pushL(subscription.id, &overcarry[length]);
+        metrics->stop_timer(waiting_send_left);
     }
 }
 
 void Burner_simple::pullL(int64_t n) {
     if (n == -1) {
-        if (!subscription.can_push_right)
-            basecase_context->pullL(&undercarry[0]);
-        return;
+        if (subscription.can_push_right) return;
+        basecase_context->pullL(&undercarry[0]);
     }
     if ((uint64_t) n == length-1) {
         if (!subscription.can_push_left) return;
+        metrics->start_timer(waiting_recv_left);
         upper_context->pullL(subscription.id, &undercarry[length]);
+        metrics->stop_timer(waiting_recv_left);
     }
     // assume it was otherwise inserted into undercarry[n+1]
     ASSERT_SYNCED(storage[n], undercarry[n+1]);
@@ -129,7 +144,9 @@ void Burner_simple::recurse(int64_t n) {
 
 uint64_t Burner_simple::step() {
     exchange(length);
+    metrics->start_timer(grinding_chain);
     recurse(length-1);
+    metrics->stop_timer(grinding_chain);
     return 1 << scale_self[length-1];
 }
 
