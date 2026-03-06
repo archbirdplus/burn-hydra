@@ -3,6 +3,7 @@
 #include <chrono>
 #include <optional>
 #include <vector>
+#include <string>
 
 enum timer_class {
     initializing,
@@ -65,6 +66,6 @@ public:
 
     void count(counter_class);
 
-    void dump_as_rank(int rank);
+    void dump_with_prefix(std::string prefix);
 };
 

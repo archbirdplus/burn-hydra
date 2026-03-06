@@ -106,9 +106,9 @@ void Metrics::count(counter_class t) {
     counters.counter[t] += 1;
 }
 
-void Metrics::dump_as_rank(int rank) {
+void Metrics::dump_with_prefix(std::string prefix) {
     std::string filename {"rank"};
-    filename.append(std::to_string(rank));
+    filename.append(prefix);
     filename.append(".json");
     std::fstream f {filename, std::ios::out};
     std::cout << "Some metrics were tracked:" << std::endl;
@@ -133,10 +133,7 @@ void Metrics::dump_as_rank(int rank) {
         throw std::runtime_error("Internal error: did not begin active timer");
     }
     const start_time_t first_start = (*timers.intervals[active_time])[0].start;
-    if (rank > 0) {
-        f << ",";
-    }
-    f << "\"rank " << rank << "\": {";
+    f << "\"rank " << prefix << "\": {";
     for (int t = 0; t < _timer_classes; t++) {
         if (std::optional<std::vector<start_stop_t>> intervals = timers.intervals[t]) {
             if (t > 0) {
@@ -155,7 +152,7 @@ void Metrics::dump_as_rank(int rank) {
             f << "]";
         }
     }
-    f << "}";
+    f << "},";
     f.flush();
     #endif
 }

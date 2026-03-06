@@ -13,6 +13,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const ranks = JSON.parse(data);
+// TODO: handle nested metrics
 const rank_count = Object.keys(ranks).length;
 
 function max_time() {
