@@ -131,7 +131,7 @@ typedef struct thread_break {
     std::condition_variable hold_over;
 
     static const uint64_t carry_taken = 1;
-    static const uint64_t carry_putten = 1;
+    static const uint64_t carry_putten = 2;
 
     thread_break(uint64_t index);
     thread_break(thread_break&& other) noexcept;
