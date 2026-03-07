@@ -107,11 +107,15 @@ void Metrics::count(counter_class t) {
 }
 
 start_time_t Metrics::first_start() {
-    if (timers.intervals[active_time]->size() == 0) {
+    if (timers.intervals[active_time]->size() != 0) {
+        const start_time_t first_start = (*timers.intervals[active_time])[0].start;
+        return first_start;
+    } else if (timers.last_start[active_time]) {
+        const start_time_t first_start = *timers.last_start[active_time];
+        return first_start;
+    } else {
         throw std::runtime_error("Internal error: did not begin active timer");
     }
-    const start_time_t first_start = (*timers.intervals[active_time])[0].start;
-    return first_start;
 }
 
 void Metrics::dump_with_prefix(std::string prefix, start_time_t first_start) {
@@ -119,7 +123,7 @@ void Metrics::dump_with_prefix(std::string prefix, start_time_t first_start) {
     filename.append("_" + prefix);
     filename.append(".json");
     std::fstream f {filename, std::ios::out};
-    std::cout << "Some metrics were tracked:" << std::endl;
+    std::cout << "Some metrics were tracked for rank " << prefix << ":" << std::endl;
     for (int t = 0; t < _timer_classes; t++) {
         const auto time = timers.total[t];
         std::chrono::duration<double> seconds = time;

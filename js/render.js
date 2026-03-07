@@ -27,7 +27,7 @@ function max_time() {
 
 const max = max_time();
 
-canvas.height = 400*max/100;
+canvas.height = 400*max/100 + graph_height;
 canvas.width = 600;
 document.body.style.backgroundColor = 'black';
 
