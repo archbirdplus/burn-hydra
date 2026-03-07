@@ -116,7 +116,7 @@ start_time_t Metrics::first_start() {
 
 void Metrics::dump_with_prefix(std::string prefix, start_time_t first_start) {
     std::string filename {"rank"};
-    filename.append(prefix);
+    filename.append("_" + prefix);
     filename.append(".json");
     std::fstream f {filename, std::ios::out};
     std::cout << "Some metrics were tracked:" << std::endl;
@@ -156,7 +156,7 @@ void Metrics::dump_with_prefix(std::string prefix, start_time_t first_start) {
             f << "]";
         }
     }
-    f << "},";
+    f << "}," << std::endl;
     f.flush();
     #endif
 }
