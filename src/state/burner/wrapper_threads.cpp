@@ -111,7 +111,7 @@ void Wrapper_threads::pushR(uint64_t id, timed_fmpz* x_export) {
         thread_break_t* br = &thread_breaks[id-1];
         std::unique_lock lk(br->undercarry.mutex);
         br->hold_under.wait(lk, [br]{ return br->undercarry_state == thread_break::carry_taken; });
-        br->undercarry.value = std::move(*x_export);
+        timed_fmpz_swap(br->undercarry.value, *x_export);
         br->undercarry_state = thread_break::carry_putten;
         br->hold_under.notify_all();
     }
@@ -126,7 +126,7 @@ void Wrapper_threads::pullR(uint64_t id, timed_fmpz* x_import) {
         thread_break_t* br = &thread_breaks[id-1];
         std::unique_lock lk(br->overcarry.mutex);
         br->hold_over.wait(lk, [br]{ return br->overcarry_state == thread_break::carry_putten; });
-        *x_import = std::move(br->overcarry.value);
+        timed_fmpz_swap(br->overcarry.value, *x_import);
         br->overcarry_state = thread_break::carry_taken;
         br->hold_over.notify_all();
     }
@@ -143,7 +143,7 @@ void Wrapper_threads::pushL(uint64_t id, timed_fmpz* x_export) {
         br->hold_over.wait(lk, [br]{
             return br->overcarry_state == thread_break::carry_taken;
         });
-        br->overcarry.value = std::move(*x_export);
+        timed_fmpz_swap(br->overcarry.value, *x_export);
         br->overcarry_state = thread_break::carry_putten;
         br->hold_over.notify_all();
     }
@@ -158,7 +158,7 @@ void Wrapper_threads::pullL(uint64_t id, timed_fmpz* x_import) {
         thread_break_t* br = &thread_breaks[id];
         std::unique_lock lk(br->undercarry.mutex);
         br->hold_under.wait(lk, [br]{ return br->undercarry_state == thread_break::carry_putten; });
-        *x_import = std::move(br->undercarry.value);
+        timed_fmpz_swap(br->undercarry.value, *x_import);
         br->undercarry_state = thread_break::carry_taken;
         br->hold_under.notify_all();
     }

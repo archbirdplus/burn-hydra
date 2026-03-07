@@ -44,6 +44,8 @@ typedef struct timed_fmpz {
     void clear();
 } timed_fmpz;
 
+void timed_fmpz_swap(timed_fmpz& lhs, timed_fmpz& rhs);
+
 bool timed_fmpz_synced(const timed_fmpz& lhs, const timed_fmpz& rhs);
 bool timed_fmpz_check_synced(const timed_fmpz& lhs, const timed_fmpz& rhs);
 

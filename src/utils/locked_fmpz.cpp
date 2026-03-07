@@ -10,7 +10,7 @@ locked_fmpz::locked_fmpz() {
 }
 
 locked_fmpz::~locked_fmpz() {
-    value.clear();
+    
 }
 
 locked_fmpz::locked_fmpz(locked_fmpz&& rhs) noexcept {

@@ -36,6 +36,11 @@ timed_fmpz& timed_fmpz::operator =(timed_fmpz&& other) noexcept {
     return *this;
 }
 
+void timed_fmpz_swap(timed_fmpz& lhs, timed_fmpz& rhs) {
+    fmpz_swap(&lhs.value, &rhs.value);
+    std::swap(lhs.iterations, rhs.iterations);
+}
+
 bool timed_fmpz_synced(const timed_fmpz& lhs, const timed_fmpz& rhs) {
     return lhs.iterations == rhs.iterations && lhs.iterations >= 0 && rhs.iterations >= 0;
 }
