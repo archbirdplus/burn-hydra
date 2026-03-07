@@ -121,16 +121,17 @@ public:
     uint64_t step() override;
 };
 
-enum carry_state { taken, putten };
-
 typedef struct thread_break {
     uint64_t right_high;
     locked_fmpz undercarry;
     locked_fmpz overcarry;
-    carry_state undercarry_state;
-    carry_state overcarry_state;
+    uint64_t undercarry_state;
+    uint64_t overcarry_state;
     std::condition_variable hold_under;
     std::condition_variable hold_over;
+
+    static const uint64_t carry_taken = 1;
+    static const uint64_t carry_putten = 1;
 
     thread_break(uint64_t index);
     thread_break(thread_break&& other) noexcept;

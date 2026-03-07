@@ -88,8 +88,8 @@ void Burner_simple::exchange(int64_t n) {
     // These calls automatically handle calling to upper context.
     assert(n >= -1);
     pushL(n-1);
-    if (n < (int64_t)length) pushR(n);
     if (n < (int64_t)length) pullR(n);
+    if (n < (int64_t)length) pushR(n);
     pullL(n-1);
 }
 
