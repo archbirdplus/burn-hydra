@@ -3,22 +3,22 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <getopt.h>
-#include <vector>
 
+#include <stdexcept>
 #include <iostream>
 
+#include "types.h"
 #include "fluent.h"
 #include "parse.h"
 
-// --config '8-18,18-20/20-20-20'
+// --config '8-18:20-22/22-24//24:24:24'
 // --prune
 // --iterations 1234567
 // --checkpoint-interval 65536
-// --x 3
-// special iterations should be automatically determined
+// -s 3
 
 static struct option longopts[] = {
-    { "config",                 required_argument,  NULL, 'c' },
+    { "layout",                 required_argument,  NULL, 'l' },
     { "prune",                  no_argument,        NULL, 'p' },
     { "iterations",             required_argument,  NULL, 'n' },
     { "checkpoint-interval",    required_argument,  NULL, 'i' },
@@ -26,38 +26,75 @@ static struct option longopts[] = {
     { NULL,                     0,                  NULL,  0  },
 };
 
-void parse_config(config_t* config, char* optarg) {
-    bool parsing_chain = false;
-    assert(config->global_block_max == 0); // must be "zero"-initialized properly
-    std::vector<std::vector<uint64_t>>* block_sizes_funnel = &config->block_sizes_funnel;
-    std::vector<std::vector<uint64_t>>* block_sizes_chain = &config->block_sizes_chain;
-    assert(block_sizes_funnel->size() == 0);
-    assert(block_sizes_chain->size() == 0);
-    std::vector<uint64_t> segment_sizes = {};
-    char* ptr = optarg;
+void parse_layout(layout_t* layout, const char* const arg) {
+    vecvec<uint64_t>* thread_breaks = &layout->thread_breaks;
+    vecvec<uint64_t>* block_sizes_ramp = &layout->block_sizes_ramp;
+    vecvec<uint64_t>* block_sizes_plat = &layout->block_sizes_plat;
+
+    bool parsing_ramp = true;
+    bool parsing_interval = false;
+    bool segment_empty = false;
+    vec<uint64_t> segment_sizes = {};
+    vec<uint64_t> segment_breaks = {};
+    char* ptr = (char*) arg;
     char ch;
     bool done = false;
     while (!done) {
         ch = *ptr;
         switch (ch) {
-        case '-':
+        case ':':
+            segment_breaks.push_back(segment_sizes.size()-1);
             break;
         case ',':
+            break;
+        case '-':
+            parsing_interval = true;
+            break;
         case '/':
         case 0:
-            {
-                auto list = parsing_chain ? block_sizes_chain : block_sizes_funnel;
-                list->push_back(segment_sizes);
+            if (parsing_interval) {
+                throw std::runtime_error("Cannot parse open interval with no previous size.");
             }
+            if (segment_empty) {
+                parsing_ramp = false;
+            } else {
+                auto sizes = parsing_ramp ? block_sizes_ramp : block_sizes_plat;
+                sizes->push_back(segment_sizes);
+                thread_breaks->push_back(segment_breaks);
+            }
+            segment_empty = true;
             segment_sizes = {};
-            if (ch == '/') parsing_chain = true;
+            segment_breaks = {};
             if (ch == 0) done = true;
             break;
         default:
+            segment_empty = false;
             uint64_t size = std::strtoull(ptr, &ptr, 10);
-            segment_sizes.push_back(size);
-            if (size > config->global_block_max) {
-                config->global_block_max = size;
+            if (parsing_interval) {
+                uint64_t prev;
+                if (segment_sizes.size() > 0) {
+                    prev = segment_sizes[segment_sizes.size()-1];
+                } else if (parsing_ramp && block_sizes_ramp->size() > 0) {
+                    vec<uint64_t> prev_seg = (*block_sizes_ramp)[block_sizes_ramp->size()-1];
+                    prev = prev_seg[prev_seg.size()-1];
+                } else {
+                    throw std::runtime_error("Cannot parse open interval with no previous size.");
+                }
+                std::cout << "prev is " << prev << " and size is " << size << std::endl;
+                if (prev < size) {
+                    for (uint64_t s = prev+1; s <= size; s++) {
+                        segment_sizes.push_back(s);
+                    }
+                } else if (prev > size) {
+                    for (uint64_t s = prev-1; s >= size; s--) {
+                        segment_sizes.push_back(s);
+                    }
+                } else {
+                    segment_sizes.push_back(size);
+                }
+                parsing_interval = false;
+            } else {
+                segment_sizes.push_back(size);
             }
             ptr--;
             break;
@@ -66,22 +103,7 @@ void parse_config(config_t* config, char* optarg) {
     }
 }
 
-void test_parse_config() {
-    config_t config = {
-        .block_sizes_funnel = {},
-        .block_sizes_chain = {},
-        .block_sizes_used = {},
-        .global_block_max = 0,
-        .prune_bits = 0,
-        .checkpoint_interval = 0,
-    };
-
-    parse_config(&config, (char*)"9-27,3-4/5-6");
-    assert(std::vector<std::vector<uint64_t>>({{9, 27}, {3, 4}}) == config.block_sizes_funnel);
-    assert(std::vector<std::vector<uint64_t>>({{5, 6}}) == config.block_sizes_chain);
-    assert(config.global_block_max == 27);
-}
-
+/*
 void parse_args(problem_t* problem, config_t* config, int argc, char** argv) {
     bool x_set = false;
     bool config_set = false;
@@ -136,7 +158,9 @@ void parse_args(problem_t* problem, config_t* config, int argc, char** argv) {
         config->checkpoint_interval = 0;
     }
 }
+*/
 
+/*
 void test_parse_args() {
     problem_t problem;
     config_t config = {
@@ -189,4 +213,5 @@ void test_parse_args() {
     assert(config.prune_bits == true);
     assert(config.checkpoint_interval == 39);
 }
+*/
 

@@ -52,7 +52,7 @@ add_library(BigCollatz SHARED)
 
 target_sources(BigCollatz
     PRIVATE
-    src/fluent/fluent.cpp src/state/init.cpp # src/state/parse.cpp
+    src/fluent/fluent.cpp src/state/init.cpp src/state/parse.cpp
     src/state/burner/wrapper_mpi.cpp src/state/burner/wrapper_threads.cpp
     src/state/burner/burner_simple.cpp
         src/state/burner/burner_m2exp.cpp
@@ -99,6 +99,7 @@ add_executable(my_tests)
 target_sources(my_tests
     PRIVATE
     src/test/test_init.cpp
+    src/test/test_parse.cpp
     src/test/test_burners.cpp
     src/test/test_fluent.cpp
     src/test/test.cpp
