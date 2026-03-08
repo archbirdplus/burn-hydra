@@ -80,10 +80,15 @@ Task::Task(const CollatzBuilder* setup) {
         friendly_concern(e, std::is_sorted(std::begin(block_sizes[i]), std::end(block_sizes[i])), "Invalid setup: block sizes cannot decrease within a segment");
         prev_size = block_sizes[i].back();
         friendly_concern(e, std::is_sorted(std::begin(thread_breaks[i]), std::end(thread_breaks[i])), "Invalid setup: thread breaks are not sorted");
+        for (uint64_t j = 0; j < block_sizes[i].size(); j++) {
+            friendly_concern(e, block_sizes[i][j] < 64, "Invalid setup: block size cannot be over 64");
+        }
         for (uint64_t j = 0; j < thread_breaks[i].size(); j++) {
             friendly_concern(e, thread_breaks[i][j] < block_sizes[i].size(), "Invalid setup: thread break is not between blocks");
         }
     }
+
+    friendly_concern(e, max_iterations % ((uint64_t)1 << prev_size) == 0, "Invalid setup: iterations must be a multiple of the highest block size");
 
     flint_threads = setup->flint_threads.value_or(1);
     scan_config = setup->scan_config;
