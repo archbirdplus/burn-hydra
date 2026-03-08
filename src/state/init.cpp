@@ -30,7 +30,7 @@ Task::Task(const CollatzBuilder* setup) {
     else friendly_concern(e, false, "Missing setup: initial value");
     if(setup->max_iterations.has_value()) max_iterations = *setup->max_iterations;
     else friendly_concern(e, false, "Missing setup: max iterations");
-    if(setup->max_iterations.has_value()) table_size = *setup->table_size;
+    if(setup->table_size.has_value()) table_size = *setup->table_size;
     else friendly_concern(e, false, "Missing setup: table size");
 
     // This seems to work outside an MPI context; world_size would simply be 1.
@@ -50,32 +50,42 @@ Task::Task(const CollatzBuilder* setup) {
     // TODO: check valid block sizes
     if(setup->block_sizes_ramp.has_value()) {
         vecvec<uint64_t> ramp = *setup->block_sizes_ramp;
-        if (!setup->thread_breaks) {
-            for (uint64_t i = 0; i < ramp.size(); i++) {
-                thread_breaks.push_back({});
-            }
-        }
         block_sizes = ramp;
         if((uint64_t)world_size > block_sizes.size()) {
             if(setup->block_sizes_plat.has_value()) {
                 vecvec<uint64_t> plat = *setup->block_sizes_plat;
                 int ramp_size = ramp.size();
                 int plat_size = plat.size();
-                for(int i = ramp_size; i < world_size; i++) {
-                    if (!setup->thread_breaks) {
+                if (!setup->thread_breaks) {
+                    for (uint64_t i = 0; i < plat.size(); i++) {
                         thread_breaks.push_back({});
                     }
+                }
+                for(int i = ramp_size; i < world_size; i++) {
+                    thread_breaks.push_back(thread_breaks[(i - ramp_size) % plat_size]);
                     block_sizes.push_back(plat[(i - ramp_size) % plat_size]);
                 }
             } else friendly_concern(e, false, "Missing setup: block sizes plateau");
         }
     } else friendly_concern(e, false, "Missing setup: block sizes");
 
+    if (!setup->thread_breaks) {
+        for (uint64_t i = 0; i < block_sizes.size(); i++) {
+            thread_breaks.push_back({});
+        }
+    }
+    for (uint64_t i = 0; i < block_sizes.size(); i++) {
+        friendly_concern(e, std::is_sorted(std::begin(thread_breaks[i]), std::end(thread_breaks[i])), "Invalid setup: thread breaks are not sorted");
+        for (uint64_t j = 0; j < thread_breaks[i].size(); j++) {
+            friendly_concern(e, thread_breaks[i][j] < block_sizes[i].size(), "Invalid setup: thread break is not between blocks");
+        }
+    }
+
     flint_threads = setup->flint_threads.value_or(1);
     scan_config = setup->scan_config;
 
     if(error) {
-        throw std::runtime_error("Configuration is missing information");
+        throw std::runtime_error("Configuration is incomplete, cannot proceed.");
     }
 }
 
