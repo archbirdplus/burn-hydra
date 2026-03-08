@@ -74,7 +74,11 @@ Task::Task(const CollatzBuilder* setup) {
             thread_breaks.push_back({});
         }
     }
+    uint64_t prev_size = 0;
     for (uint64_t i = 0; i < block_sizes.size(); i++) {
+        friendly_concern(e, prev_size <= block_sizes[i].front(), "Invalid setup: block sizes cannot decrease across segment");
+        friendly_concern(e, std::is_sorted(std::begin(block_sizes[i]), std::end(block_sizes[i])), "Invalid setup: block sizes cannot decrease within a segment");
+        prev_size = block_sizes[i].back();
         friendly_concern(e, std::is_sorted(std::begin(thread_breaks[i]), std::end(thread_breaks[i])), "Invalid setup: thread breaks are not sorted");
         for (uint64_t j = 0; j < thread_breaks[i].size(); j++) {
             friendly_concern(e, thread_breaks[i][j] < block_sizes[i].size(), "Invalid setup: thread break is not between blocks");

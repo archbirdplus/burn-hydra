@@ -55,6 +55,14 @@ TEST(ParseTest, ThreadBreaksOutOfBounds) {
     vecvec_eq({{2},{x},{x}}, layout.thread_breaks);
 }
 
+TEST(ParseTest, OneThreadBreak) {
+    layout_t layout;
+    parse_layout(&layout, "1:2-1");
+    vecvec_eq({{1, 2, 1}}, layout.block_sizes_ramp);
+    vecvec_eq({}, layout.block_sizes_plat);
+    vecvec_eq({{0}}, layout.thread_breaks);
+}
+
 // These exceptions cannot be caught for some reason.
 /*
 TEST(ParseTest, BeginningOpenIntervalThrows) {
