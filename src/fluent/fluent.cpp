@@ -2,6 +2,7 @@
 #include "state.h"
 #include "fluent.h"
 #include "friendly_assert.h"
+#include "parse.h"
 
 CollatzBuilder::CollatzBuilder() {
     // everything null
@@ -12,6 +13,8 @@ CollatzBuilder CollatzBuilder::clone() const {
 
     if (this->block_sizes_ramp && this->block_sizes_plat)
         setup.block_sizes(*this->block_sizes_ramp, *this->block_sizes_plat);
+    if (this->thread_breaks)
+        setup.set_thread_breaks(*this->thread_breaks);
     if (this->checkpoint_interval)
         setup.set_checkpoint_interval(*this->checkpoint_interval);
 
@@ -47,11 +50,30 @@ CollatzBuilder& CollatzBuilder::from_argv() {
     return *this;
 }
 
-CollatzBuilder& CollatzBuilder::block_sizes(vecvec<uint64_t> ramp_up, vecvec<uint64_t> plat) {
-    this->block_sizes_ramp = ramp_up;
+CollatzBuilder& CollatzBuilder::layout_string(std::string layout_string) {
+    layout_t layout;
+    parse_layout(&layout, layout_string.c_str());
+    this->set_layout(layout.block_sizes_ramp, layout.block_sizes_plat, layout.thread_breaks);
+    return *this;
+}
+
+CollatzBuilder& CollatzBuilder::set_layout(vecvec<uint64_t> ramp, vecvec<uint64_t> plat, vecvec<uint64_t> breaks) {
+    this->block_sizes(ramp, plat);
+    this->set_thread_breaks(breaks);
+    return *this;
+}
+
+CollatzBuilder& CollatzBuilder::set_thread_breaks(vecvec<uint64_t> breaks) {
+    this->thread_breaks = breaks;
+    return *this;
+}
+
+CollatzBuilder& CollatzBuilder::block_sizes(vecvec<uint64_t> ramp, vecvec<uint64_t> plat) {
+    this->block_sizes_ramp = ramp;
     this->block_sizes_plat = plat;
     return *this;
 }
+
 CollatzBuilder& CollatzBuilder::set_checkpoint_interval(int64_t interval) {
     this->checkpoint_interval = interval;
     return *this;

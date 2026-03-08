@@ -19,6 +19,7 @@ public:
     opt<uint64_t> table_size;
     opt<vecvec<uint64_t>> block_sizes_ramp;
     opt<vecvec<uint64_t>> block_sizes_plat;
+    opt<vecvec<uint64_t>> thread_breaks;
     opt<int> flint_threads;
 
     opt<scan_config_t> scan_config;
@@ -30,8 +31,11 @@ public:
     CollatzBuilder clone() const; // init new from self
 
     CollatzBuilder& from_argv();
+    CollatzBuilder& layout_string(std::string);
 
-    CollatzBuilder& block_sizes(vecvec<uint64_t> ramp_up, vecvec<uint64_t> plat);
+    CollatzBuilder& set_layout(vecvec<uint64_t> ramp, vecvec<uint64_t> plat, vecvec<uint64_t> breaks);
+    CollatzBuilder& set_thread_breaks(vecvec<uint64_t> breaks);
+    CollatzBuilder& block_sizes(vecvec<uint64_t> ramp, vecvec<uint64_t> plat);
     CollatzBuilder& set_checkpoint_interval(int64_t interval);
 
     CollatzBuilder& set_flint_threads(int threads);

@@ -3,8 +3,10 @@
 
 #include "state.h"
 
-template<class T>
-using opt = std::optional<T>;
+inline void optvecvec_eq(vecvec<uint64_t> lhs, opt<vecvec<uint64_t>> rhs) {
+    EXPECT_FALSE(std::nullopt == rhs);
+    EXPECT_EQ(lhs, *rhs);
+}
 
 TEST(FluentTest, OptionalChain) {
     EXPECT_EQ(opt<int>{1} && std::make_optional("abc"), true) << "&& all non-null";
@@ -44,6 +46,14 @@ TEST(FluentTest, OverwriteScan) {
     s.scan_context(ctx);
     EXPECT_EQ(s.scan_config->scan_fn, f) << "scan_fn got replaced incorrectly";
     EXPECT_EQ(s.scan_config->scan_context, ctx) << "scan_context not updated correctly";
+}
+
+TEST(FluentTest, LayoutString) {
+    CollatzBuilder s = CollatzBuilder();
+    s.layout_string("1,2,3/4,5,6//7:7:7");
+    optvecvec_eq({{1, 2, 3}, {4, 5, 6}}, s.block_sizes_ramp);
+    optvecvec_eq({{7, 7, 7}}, s.block_sizes_plat);
+    optvecvec_eq({{}, {}, {0,1}}, s.thread_breaks);
 }
 
 
