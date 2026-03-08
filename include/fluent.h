@@ -30,7 +30,7 @@ public:
     static CollatzBuilder bigfoot();
     CollatzBuilder clone() const; // init new from self
 
-    CollatzBuilder& from_argv();
+    CollatzBuilder& from_argv(int argc, char** argv);
     CollatzBuilder& layout_string(std::string);
 
     CollatzBuilder& set_layout(vecvec<uint64_t> ramp, vecvec<uint64_t> plat, vecvec<uint64_t> breaks);
@@ -41,7 +41,7 @@ public:
     CollatzBuilder& set_flint_threads(int threads);
 
     CollatzBuilder& consistent_collatz(int64_t r, int64_t m, vec<int64_t> J);
-    CollatzBuilder& set_initial(int64_t x);
+    CollatzBuilder& initial_value(int64_t x);
     CollatzBuilder& set_iterations(int64_t n);
 
     CollatzBuilder& do_prune(bool prune);

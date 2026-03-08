@@ -20,7 +20,7 @@ user_object_t count_parities(void* context, user_object_t x, uint64_t residue) {
 }
 
 
-int main() {
+int main(int argc, char** argv) {
     scan_fn_t count_fn = &count_parities;
     count_context_t ctx = { .even=0, .odd=0 };
 
@@ -30,9 +30,9 @@ int main() {
         .set_flint_threads(1)
         .do_prune(true)
         .set_iterations(iterations)
-        .from_argv()
+        .from_argv(argc, argv)
         .consistent_collatz(3, 2, {0, 1})
-        .set_initial(3)
+        .initial_value(3)
         .set_table_size(16)
         .scan_fn(count_fn, 16, false)
         .scan_context(&ctx);

@@ -26,7 +26,7 @@ CollatzBuilder CollatzBuilder::clone() const {
         setup.consistent_collatz(g.r, g.m, g.J);
     }
     if (this->initial)
-        setup.set_initial(*this->initial);
+        setup.initial_value(*this->initial);
     if (this->max_iterations)
         setup.set_iterations(*this->max_iterations);
 
@@ -45,8 +45,28 @@ CollatzBuilder CollatzBuilder::clone() const {
     return setup;
 }
 
-CollatzBuilder& CollatzBuilder::from_argv() {
-    // TODO: refactor argv parsing
+CollatzBuilder& CollatzBuilder::from_argv(int argc, char** argv) {
+    parse_results_t parse_results;
+    parse_args(&parse_results, argc, argv);
+    if (parse_results.layout) {
+        layout_t l = *parse_results.layout;
+        this->set_layout(l.block_sizes_ramp, l.block_sizes_plat, l.thread_breaks);
+    }
+    if (parse_results.prune) {
+        this->do_prune(*parse_results.prune);
+    }
+    if (parse_results.iterations) {
+        this->set_iterations(*parse_results.iterations);
+    }
+    if (parse_results.checkpoint_interval) {
+        this->set_checkpoint_interval(*parse_results.checkpoint_interval);
+    }
+    if (parse_results.start_value) {
+        this->initial_value(*parse_results.start_value);
+    }
+    if (parse_results.flint_threads) {
+        this->set_flint_threads(*parse_results.flint_threads);
+    }
     return *this;
 }
 
@@ -90,7 +110,7 @@ CollatzBuilder& CollatzBuilder::consistent_collatz(int64_t r, int64_t m, vec<int
     };
     return *this;
 }
-CollatzBuilder& CollatzBuilder::set_initial(int64_t r) {
+CollatzBuilder& CollatzBuilder::initial_value(int64_t r) {
     this->initial = r;
     return *this;
 }

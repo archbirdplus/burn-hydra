@@ -9,14 +9,15 @@ typedef struct layout {
 } layout_t;
 
 typedef struct parse_results {
-    layout_t layout;
-    bool prune;
-    uint64_t iterations;
-    uint64_t checkpoint_interval;
-    int64_t start_value;
+    opt<layout_t> layout;
+    opt<bool> prune;
+    opt<uint64_t> iterations;
+    opt<uint64_t> checkpoint_interval;
+    opt<int64_t> start_value;
+    opt<uint64_t> flint_threads;
 } parse_results_t;
 
 void parse_layout(layout_t*, const char*);
-//void parse_args(problem_t* problem, config_t* config, int argc, char** argv);
+void parse_args(parse_results_t*, int, char**);
 
 

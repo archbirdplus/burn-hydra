@@ -20,7 +20,7 @@ protected:
             .set_iterations(256)
             .set_table_size(2)
             .do_prune(true)
-            .set_initial(3);
+            .initial_value(3);
     }
 
     void SetUp() override {
@@ -127,7 +127,7 @@ TEST_F(BurnerTest, OneThreadResult) {
             .set_iterations(iteration_count)
             .set_table_size(2)
             .do_prune(true)
-            .set_initial(3);
+            .initial_value(3);
     Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
     auto mpi_wrapper = Wrapper_MPI(&context);
     auto threads_wrapper = Wrapper_threads(&context, &mpi_wrapper);
@@ -167,7 +167,7 @@ TEST_F(BurnerTest, ThreeThreadedResult) {
             .set_iterations(iteration_count)
             .set_table_size(2)
             .do_prune(true)
-            .set_initial(3);
+            .initial_value(3);
     Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
     context.task->thread_breaks = {{0, 1}};
     auto mpi_wrapper = Wrapper_MPI(&context);
@@ -233,7 +233,7 @@ TYPED_TEST_P(BurnerTypesTest, CheckFinalValue) {
             .set_iterations(iteration_count)
             .set_table_size(2)
             .do_prune(true)
-            .set_initial(3);
+            .initial_value(3);
     Context context = builder.block_sizes({{4, 5, 6}}, {}).init();
     // burner:   simple, m2exp
     // basecase: simple, table, m2exp
