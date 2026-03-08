@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <thread>
+#include <condition_variable>
 
 #include "metrics.h"
 #include "state.h"
