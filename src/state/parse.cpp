@@ -81,7 +81,6 @@ void parse_layout(layout_t* layout, const char* const arg) {
                 } else {
                     throw std::runtime_error("Cannot parse open interval with no previous size.");
                 }
-                std::cout << "prev is " << prev << " and size is " << size << std::endl;
                 if (prev < size) {
                     for (uint64_t s = prev+1; s <= size; s++) {
                         segment_sizes.push_back(s);

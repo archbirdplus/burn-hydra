@@ -38,14 +38,22 @@ Task::Task(const CollatzBuilder* setup) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    thread_breaks = {};
+    if (setup->thread_breaks) {
+        thread_breaks = *setup->thread_breaks;
+        if (thread_breaks.size() != setup->block_sizes_ramp->size() + setup->block_sizes_plat->size())
+            friendly_concern(e, false, "Invalid setup: wrong number of thread breaks");
+    } else {
+        thread_breaks = {};
+    }
 
     // TODO: automatically configure block sizes based on problem size, node count
     // TODO: check valid block sizes
     if(setup->block_sizes_ramp.has_value()) {
         vecvec<uint64_t> ramp = *setup->block_sizes_ramp;
-        for (uint64_t i = 0; i < ramp.size(); i++) {
-            thread_breaks.push_back({});
+        if (!setup->thread_breaks) {
+            for (uint64_t i = 0; i < ramp.size(); i++) {
+                thread_breaks.push_back({});
+            }
         }
         block_sizes = ramp;
         if((uint64_t)world_size > block_sizes.size()) {
@@ -54,7 +62,9 @@ Task::Task(const CollatzBuilder* setup) {
                 int ramp_size = ramp.size();
                 int plat_size = plat.size();
                 for(int i = ramp_size; i < world_size; i++) {
-                    thread_breaks.push_back({});
+                    if (!setup->thread_breaks) {
+                        thread_breaks.push_back({});
+                    }
                     block_sizes.push_back(plat[(i - ramp_size) % plat_size]);
                 }
             } else friendly_concern(e, false, "Missing setup: block sizes plateau");
@@ -118,7 +128,7 @@ void Context::run() {
     std::unique_ptr<Basecase_simple> basecase;
     vec<Burner*> burners = {};
     uint64_t thread_count = wrapper_threads.thread_count;
-        for (uint64_t i = 0; i < thread_count; i++) {
+    for (uint64_t i = 0; i < thread_count; i++) {
         if (!task->scan_config || task->scan_config->scan_block_size == task->table_size) {
             std::cout << "Chose basecase: table" << std::endl;
             basecase = std::unique_ptr<Basecase_table>(new Basecase_table(this));
