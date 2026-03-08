@@ -21,6 +21,7 @@ static struct option longopts[] = {
     { "layout",                 required_argument,  NULL, 'l' },
     { "prune",                  no_argument,        NULL, 'p' },
     { "iterations",             required_argument,  NULL, 'n' },
+    { "exp-iterations",         required_argument,  NULL, 'e' },
     { "checkpoint-interval",    required_argument,  NULL, 'i' },
     { "s",                      required_argument,  NULL, 's' },
     { "flint-threads",          required_argument,  NULL, 'f' },
@@ -118,6 +119,12 @@ void parse_args(parse_results_t* parse_results, int argc, char** argv) {
             {
                 const uint64_t iters = std::strtoull(optarg, nullptr, 10);
                 parse_results->iterations = iters;
+            }
+            break;
+        case 'e':
+            {
+                const uint64_t iters = std::strtoull(optarg, nullptr, 10);
+                parse_results->iterations = (uint64_t)1 << iters;
             }
             break;
         case 'i':
