@@ -45,6 +45,7 @@ void Burner_simple::tick(int64_t n) {
         }
         return;
     }
+    metrics->start_timer(grinding_chain);
     Workspace* ws = global_context->workspace.get();
 
     uint64_t scale = scale_next[n];
@@ -53,6 +54,7 @@ void Burner_simple::tick(int64_t n) {
     storage[n].iterations += (uint64_t) 1 << scale;
     undercarry[n].iterations = storage[n].iterations;
     // set undercarry[n]
+    metrics->stop_timer(grinding_chain);
 }
 
 void Burner_simple::pushR(int64_t n) {
@@ -145,9 +147,7 @@ void Burner_simple::recurse(int64_t n) {
 
 uint64_t Burner_simple::step() {
     exchange(length);
-    metrics->start_timer(grinding_chain);
     recurse(length-1);
-    metrics->stop_timer(grinding_chain);
     return 1 << scale_self[length-1];
 }
 

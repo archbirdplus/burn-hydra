@@ -17,10 +17,14 @@ Burner_m2exp::~Burner_m2exp() {
 
 void Burner_m2exp::tick(int64_t n) {
     if (n == -1) {
-        if (!subscription.can_push_right)
+        if (!subscription.can_push_right) {
+            metrics->start_timer(grinding_basecase);
             basecase_context->tick();
+            metrics->stop_timer(grinding_basecase);
+        }
         return;
     }
+    metrics->start_timer(grinding_chain);
     Workspace* ws = global_context->workspace.get();
 
     uint64_t scale = scale_next[n];
@@ -31,6 +35,7 @@ void Burner_m2exp::tick(int64_t n) {
     storage[n].iterations += (uint64_t) 1 << scale;
     undercarry[n].iterations = storage[n].iterations;
     // set undercarry[n]
+    metrics->stop_timer(grinding_chain);
 }
 
 void Burner_m2exp::pushL(int64_t n) {
@@ -56,9 +61,7 @@ void Burner_m2exp::pushL(int64_t n) {
 
 uint64_t Burner_m2exp::step() {
     exchange(length);
-    metrics->start_timer(grinding_chain);
     recurse(length-1);
-    metrics->stop_timer(grinding_chain);
     return 1 << scale_self[length-1];
 }
 

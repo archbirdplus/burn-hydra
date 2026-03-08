@@ -28,8 +28,6 @@ int main(int argc, char** argv) {
     count_context_t ctx = { .even=0, .odd=0 };
 
     auto s = CollatzBuilder()
-        .block_sizes({{8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27}}, {})
-        .set_thread_breaks({{4,9,11,13,15,17},{}})
         .set_flint_threads(1)
         .do_prune(true)
         .from_argv(argc, argv)
