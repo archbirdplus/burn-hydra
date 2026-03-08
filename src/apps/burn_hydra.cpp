@@ -16,6 +16,9 @@ user_object_t count_parities(void* context, user_object_t x, uint64_t residue) {
         }
         residue = residue*3/2;
     }
+    if ((ctx->even + ctx->odd) % (1<<30) == 0) {
+        std::cout << "another billion: " << (ctx->even + ctx->odd) << std::endl;
+    }
     return x;
 }
 
@@ -24,13 +27,11 @@ int main(int argc, char** argv) {
     scan_fn_t count_fn = &count_parities;
     count_context_t ctx = { .even=0, .odd=0 };
 
-    uint64_t iterations = 1<<28;
     auto s = CollatzBuilder()
         .block_sizes({{8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27}}, {})
         .set_thread_breaks({{4,9,11,13,15,17},{}})
         .set_flint_threads(1)
         .do_prune(true)
-        .set_iterations(iterations)
         .from_argv(argc, argv)
         .consistent_collatz(3, 2, {0, 1})
         .initial_value(3)
@@ -40,7 +41,7 @@ int main(int argc, char** argv) {
     Context c = s.init();
     c.run();
 
-    std::cout << "Count after " << iterations << " iterations --" << std::endl;
+    std::cout << "Count after " << c.task->max_iterations << " iterations --" << std::endl;
     std::cout << "    even: " << ctx.even << std::endl;
     std::cout << "     odd: " << ctx.odd<< std::endl;
 
