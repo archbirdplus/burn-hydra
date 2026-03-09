@@ -16,7 +16,18 @@ void ensure_MPI_init() {
     int flag;
     MPI_Initialized(&flag);
     if (!flag) {
-        MPI_Init(NULL, NULL);
+        int req = MPI_THREAD_MULTIPLE;
+        int prov;
+        MPI_Init_thread(NULL, NULL, req, &prov);
+        if (req == MPI_THREAD_SINGLE) {
+            std::cout << "Initialized MPI with MPI_THREAD_SINGLE" << std::endl;
+        } else if (req == MPI_THREAD_FUNNELED) {
+            std::cout << "Initialized MPI with MPI_THREAD_FUNNELED" << std::endl;
+        } else if (req == MPI_THREAD_SERIALIZED) {
+            std::cout << "Initialized MPI with MPI_THREAD_SERIALIZED" << std::endl;
+        } else if (req == MPI_THREAD_MULTIPLE) {
+            std::cout << "Initialized MPI with MPI_THREAD_MULTIPLE" << std::endl;
+        }
     }
 }
 
