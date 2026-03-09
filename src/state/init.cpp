@@ -127,8 +127,8 @@ Context::Context(const CollatzBuilder* setup) {
     metrics = std::unique_ptr<Metrics>(new Metrics(true));
     metrics->start_timer(active_time);
     metrics->start_timer(initializing);
-    flint_set_num_threads(task->flint_threads);
     task = std::unique_ptr<Task>(new Task(setup));
+    flint_set_num_threads(task->flint_threads);
     workspace = std::unique_ptr<Workspace>(new Workspace(task.get()));
     metrics->stop_timer(initializing);
 }
