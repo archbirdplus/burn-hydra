@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.22)
 
 # find_package(MPI)
 
@@ -63,10 +63,10 @@ target_sources(BigCollatz
     include/communicate.h include/friendly_assert.h include/parse.h
 
     PUBLIC
-    FILE_SET HEADERS
-    BASE_DIRS include
-    FILES include/fluent.h include/state.h
+    include/fluent.h include/state.h
 )
+
+target_include_directories(BigCollatz PUBLIC include)
 
 # if(ipo_supported)
     # message(STATUS "IPO / LTO enabled")
@@ -104,14 +104,12 @@ target_sources(my_tests
     src/test/test_fluent.cpp
     src/test/test.cpp
     PUBLIC
-    FILE_SET HEADERS
-    BASE_DIRS include
+    include
 )
 
 equip(my_tests)
 
-target_link_libraries(
-    my_tests
+target_link_libraries(my_tests
     BigCollatz
     GTest::gtest_main
 )
