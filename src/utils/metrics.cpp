@@ -59,18 +59,28 @@ Metrics::Metrics(bool full_logs) {
     #ifndef NO_PLOT_LOGS
     timers->intervals[active_time] = std::vector<start_stop_t>();
     timers->intervals[initializing] = std::vector<start_stop_t>();
-    timers->intervals[waiting_send_left] = std::vector<start_stop_t>();
-    timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
     timers->intervals[gather_communication] = std::vector<start_stop_t>();
+    timers->intervals[grinding_chain] = std::vector<start_stop_t>();
     if (full_logs) {
+        timers->intervals[waiting_send_left] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
         timers->intervals[waiting_send_right] = std::vector<start_stop_t>();
         timers->intervals[waiting_recv_right] = std::vector<start_stop_t>();
-        timers->intervals[grinding_chain] = std::vector<start_stop_t>();
+        timers->intervals[waiting_send_left_mpi] = std::vector<start_stop_t>();
+        timers->intervals[waiting_send_left_copy] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_left_mpi] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_left_copy] = std::vector<start_stop_t>();
+        timers->intervals[waiting_send_right] = std::vector<start_stop_t>();
+        timers->intervals[waiting_send_right_mpi] = std::vector<start_stop_t>();
+        timers->intervals[waiting_send_right_copy] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_right] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_right_mpi] = std::vector<start_stop_t>();
+        timers->intervals[waiting_recv_right_copy] = std::vector<start_stop_t>();
     }
     #else
     (void)full_logs;
     #endif
-    // the rest should be zero-initialized
 }
 
 void Metrics::start_timer(timer_class t) {

@@ -21,13 +21,18 @@ const ranks = JSON.parse(data);
 const count = Object.keys(ranks).length;
 
 function max_time() {
-    const xs = ranks["rank 0"]['actively'];
-    return xs[xs.length-1][1];
+    var rank = ranks["rank 0"] && ranks["rank 0"]['actively']
+    if (!rank || rank.length == 0) { rank = ranks["rank 0_0"] && ranks["rank 0_0"]["actively"]; }
+    if (rank && rank.length) {
+        return rank[rank.length-1][1];
+    } else {
+        return Object.values(Object.values(ranks)[0]).flat(2).reduce((r,x)=>Math.max(r,x));
+    }
 }
 
 const max = max_time();
 
-canvas.height = 400*30*max/100 + graph_height;
+canvas.height = 400*3*max/100 + graph_height;
 canvas.width = 600*2;
 document.body.style.backgroundColor = 'black';
 

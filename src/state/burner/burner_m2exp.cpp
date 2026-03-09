@@ -53,9 +53,9 @@ void Burner_m2exp::pushL(int64_t n) {
     overcarry[n+1].iterations = storage[n].iterations;
     // set overcarry[n+1]
     if (n == ((int64_t)length)-1) {
-        metrics->start_timer(waiting_send_right);
+        metrics->start_timer(waiting_send_left);
         upper_context->pushL(subscription.id, &overcarry[length]);
-        metrics->stop_timer(waiting_send_right);
+        metrics->stop_timer(waiting_send_left);
     }
 }
 
