@@ -5,7 +5,7 @@
 
 Burner_simple::Burner_simple(Context* global_ctx, Wrapper* wrapper, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
-    metrics = std::unique_ptr<Metrics>(new Metrics(true));
+    metrics = std::unique_ptr<Metrics>(new Metrics(global_context->task->world_rank != 0 || global_context->task->world_size <= 1));
     basecase_context = std::move(basecase_ctx);
     upper_context = wrapper;
     subscription = wrapper->add_subscriber(this);
