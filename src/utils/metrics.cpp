@@ -25,6 +25,7 @@ const char* timer_class_names[] = {
     "grinding basecase",
     "grinding chain",
     "gather communication",
+    "writing summary",
     "actively",
     "uh oh",
 };
@@ -56,9 +57,10 @@ Metrics::Metrics(bool full_logs) {
     for (int i = 0; i < _timer_classes; i++) {
         timers->intervals[i] = std::nullopt;
     }
-    #ifndef NO_PLOT_LOGS
     timers->intervals[active_time] = std::vector<start_stop_t>();
     timers->intervals[initializing] = std::vector<start_stop_t>();
+    timers->intervals[writing_summary] = std::vector<start_stop_t>();
+    #ifndef NO_PLOT_LOGS
     timers->intervals[gather_communication] = std::vector<start_stop_t>();
     timers->intervals[grinding_chain] = std::vector<start_stop_t>();
     if (full_logs) {

@@ -184,8 +184,10 @@ void Context::run() {
     uint64_t destination = this->task->max_iterations;
     wrapper_mpi.run_until(destination);
 
+    metrics->start_timer(writing_summary);
     std::cout << "Finished: rank " << task->world_rank << std::endl;
     wrapper_mpi.logs_with_prefix(std::to_string(task->world_rank), metrics->first_start());
+    metrics->stop_timer(writing_summary);
     metrics->stop_timer(active_time);
     metrics->dump_with_prefix(std::to_string(task->world_rank), metrics->first_start());
 

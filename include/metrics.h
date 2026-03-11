@@ -22,6 +22,7 @@ enum timer_class {
     grinding_basecase,
     grinding_chain,
     gather_communication,
+    writing_summary,
     active_time,
     _timer_classes,
 };
