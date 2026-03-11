@@ -5,10 +5,11 @@
 
 Burner_simple::Burner_simple(Context* global_ctx, Wrapper* wrapper, std::unique_ptr<Basecase_simple> basecase_ctx) {
     global_context = global_ctx;
-    metrics = std::unique_ptr<Metrics>(new Metrics(global_context->task->world_rank != 0 || global_context->task->world_size <= 1));
-    basecase_context = std::move(basecase_ctx);
-    upper_context = wrapper;
     subscription = wrapper->add_subscriber(this);
+    basecase_context = std::move(basecase_ctx);
+    bool is_small_segment = global_context->task->world_size <= 1 ? subscription.id == 0 : global_context->task->world_rank == 0;
+    metrics = std::unique_ptr<Metrics>(new Metrics(!is_small_segment));
+    upper_context = wrapper;
     scale_self = subscription.scales;
     this->length = scale_self.size();
     scale_next = {subscription.next_scale};

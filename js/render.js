@@ -21,7 +21,7 @@ const ranks = JSON.parse(data);
 const count = Object.keys(ranks).length;
 
 function max_time() {
-    var rank = ranks["rank 0"] && ranks["rank 0"]['actively']
+    const rank = ranks["rank 0"] && ranks["rank 0"]['actively']
     if (!rank || rank.length == 0) { rank = ranks["rank 0_0"] && ranks["rank 0_0"]["actively"]; }
     if (rank && rank.length) {
         return rank[rank.length-1][1];
@@ -30,7 +30,7 @@ function max_time() {
     }
 }
 
-const max = max_time();
+var max = max_time();
 
 canvas.height = 400*3*max/100 + graph_height;
 canvas.width = 600*2;

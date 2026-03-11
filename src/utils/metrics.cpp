@@ -60,9 +60,8 @@ Metrics::Metrics(bool full_logs) {
     timers->intervals[active_time] = std::vector<start_stop_t>();
     timers->intervals[initializing] = std::vector<start_stop_t>();
     timers->intervals[writing_summary] = std::vector<start_stop_t>();
-    #ifndef NO_PLOT_LOGS
     timers->intervals[gather_communication] = std::vector<start_stop_t>();
-    timers->intervals[grinding_chain] = std::vector<start_stop_t>();
+    #ifndef NO_PLOT_LOGS
     if (full_logs) {
         timers->intervals[waiting_send_left] = std::vector<start_stop_t>();
         timers->intervals[waiting_recv_left] = std::vector<start_stop_t>();
@@ -79,6 +78,7 @@ Metrics::Metrics(bool full_logs) {
         timers->intervals[waiting_recv_right] = std::vector<start_stop_t>();
         timers->intervals[waiting_recv_right_mpi] = std::vector<start_stop_t>();
         timers->intervals[waiting_recv_right_copy] = std::vector<start_stop_t>();
+        timers->intervals[grinding_chain] = std::vector<start_stop_t>();
     }
     #else
     (void)full_logs;
