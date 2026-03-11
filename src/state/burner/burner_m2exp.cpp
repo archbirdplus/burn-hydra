@@ -59,12 +59,6 @@ void Burner_m2exp::pushL(int64_t n) {
     }
 }
 
-uint64_t Burner_m2exp::step() {
-    exchange(length);
-    recurse(length-1);
-    return 1 << scale_self[length-1];
-}
-
 
 
 

@@ -118,8 +118,6 @@ public:
     virtual void tick(int64_t n) override;
 
     virtual void pushL(int64_t n) override;
-
-    uint64_t step() override;
 };
 
 typedef struct thread_break {

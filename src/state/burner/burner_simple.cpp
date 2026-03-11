@@ -148,7 +148,7 @@ void Burner_simple::recurse(int64_t n) {
 uint64_t Burner_simple::step() {
     exchange(length);
     recurse(length-1);
-    return 1 << scale_self[length-1];
+    return (uint64_t) 1 << scale_self[length-1];
 }
 
 void Burner_simple::run_until(uint64_t end) {
